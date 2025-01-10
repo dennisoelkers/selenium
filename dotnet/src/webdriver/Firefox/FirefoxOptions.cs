@@ -1,25 +1,24 @@
-// <copyright file="FirefoxOptions.cs" company="WebDriver Committers">
+// <copyright file="FirefoxOptions.cs" company="Selenium Committers">
 // Licensed to the Software Freedom Conservancy (SFC) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The SFC licenses this file
-// to you under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using OpenQA.Selenium.Remote;
 
 namespace OpenQA.Selenium.Firefox
 {
@@ -63,7 +62,7 @@ namespace OpenQA.Selenium.Firefox
         private const string FirefoxEnableDevToolsProtocolCapability = "moz:debuggerAddress";
 
         private bool enableDevToolsProtocol;
-        private string browserBinaryLocation;
+        private string binaryLocation;
         private FirefoxDriverLogLevel logLevel = FirefoxDriverLogLevel.Default;
         private FirefoxProfile profile;
         private List<string> firefoxArguments = new List<string>();
@@ -90,16 +89,9 @@ namespace OpenQA.Selenium.Firefox
             this.AddKnownCapabilityName(FirefoxOptions.FirefoxLegacyProfileCapability, "Profile property");
             this.AddKnownCapabilityName(FirefoxOptions.FirefoxLegacyBinaryCapability, "BrowserExecutableLocation property");
             this.AddKnownCapabilityName(FirefoxOptions.FirefoxEnableDevToolsProtocolCapability, "EnableDevToolsProtocol property");
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to use the legacy driver implementation.
-        /// </summary>
-        [Obsolete(".NET bindings no longer support the legacy driver implementation. Setting this property no longer has any effect. .NET users should always be using geckodriver.")]
-        public bool UseLegacyImplementation
-        {
-            get { return false; }
-            set { }
+            // Firefox 129 onwards the CDP protocol will not be enabled by default. Setting this preference will enable it.
+            // https://fxdx.dev/deprecating-cdp-support-in-firefox-embracing-the-future-with-webdriver-bidi/.
+            this.SetPreference("remote.active-protocols", 3);
         }
 
         /// <summary>
@@ -114,10 +106,20 @@ namespace OpenQA.Selenium.Firefox
         /// <summary>
         /// Gets or sets the path and file name of the Firefox browser executable.
         /// </summary>
+        public override string BinaryLocation
+        {
+            get { return this.binaryLocation; }
+            set { this.binaryLocation = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the path and file name of the Firefox browser executable.
+        /// </summary>
+        [Obsolete("Use BinaryLocation property instead of BrowserExecutableLocation. This one will be removed soon.")]
         public string BrowserExecutableLocation
         {
-            get { return this.browserBinaryLocation; }
-            set { this.browserBinaryLocation = value; }
+            get { return this.binaryLocation; }
+            set { this.binaryLocation = value; }
         }
 
         /// <summary>
@@ -129,6 +131,9 @@ namespace OpenQA.Selenium.Firefox
             set { this.logLevel = value; }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to enable the DevTools protocol for the launched browser.
+        /// </summary>
         public bool EnableDevToolsProtocol
         {
             get { return this.enableDevToolsProtocol; }
@@ -275,58 +280,6 @@ namespace OpenQA.Selenium.Firefox
         }
 
         /// <summary>
-        /// Provides a means to add additional capabilities not yet added as type safe options
-        /// for the Firefox driver.
-        /// </summary>
-        /// <param name="capabilityName">The name of the capability to add.</param>
-        /// <param name="capabilityValue">The value of the capability to add.</param>
-        /// <exception cref="ArgumentException">
-        /// thrown when attempting to add a capability for which there is already a type safe option, or
-        /// when <paramref name="capabilityName"/> is <see langword="null"/> or the empty string.
-        /// </exception>
-        /// <remarks>Calling <see cref="AddAdditionalCapability(string, object)"/>
-        /// where <paramref name="capabilityName"/> has already been added will overwrite the
-        /// existing value with the new value in <paramref name="capabilityValue"/>.
-        /// Also, by default, calling this method adds capabilities to the options object passed to
-        /// geckodriver.exe.</remarks>
-        [Obsolete("Use the temporary AddAdditionalOption method or the AddAdditionalFirefoxOption method for adding additional options")]
-        public override void AddAdditionalCapability(string capabilityName, object capabilityValue)
-        {
-            // Add the capability to the FirefoxOptions object by default. This is to handle
-            // the 80% case where the geckodriver team adds a new option in geckodriver.exe
-            // and the bindings have not yet had a type safe option added.
-            this.AddAdditionalFirefoxOption(capabilityName, capabilityValue);
-        }
-
-        /// <summary>
-        /// Provides a means to add additional capabilities not yet added as type safe options
-        /// for the Firefox driver.
-        /// </summary>
-        /// <param name="capabilityName">The name of the capability to add.</param>
-        /// <param name="capabilityValue">The value of the capability to add.</param>
-        /// <param name="isGlobalCapability">Indicates whether the capability is to be set as a global
-        /// capability for the driver instead of a Firefox-specific option.</param>
-        /// <exception cref="ArgumentException">
-        /// thrown when attempting to add a capability for which there is already a type safe option, or
-        /// when <paramref name="capabilityName"/> is <see langword="null"/> or the empty string.
-        /// </exception>
-        /// <remarks>Calling <see cref="AddAdditionalCapability(string, object, bool)"/>
-        /// where <paramref name="capabilityName"/> has already been added will overwrite the
-        /// existing value with the new value in <paramref name="capabilityValue"/></remarks>
-        [Obsolete("Use the temporary AddAdditionalOption method or the AddAdditionalFirefoxOption method for adding additional options")]
-        public void AddAdditionalCapability(string capabilityName, object capabilityValue, bool isGlobalCapability)
-        {
-            if (isGlobalCapability)
-            {
-                this.AddAdditionalOption(capabilityName, capabilityValue);
-            }
-            else
-            {
-                this.AddAdditionalFirefoxOption(capabilityName, capabilityValue);
-            }
-        }
-
-        /// <summary>
         /// Returns DesiredCapabilities for Firefox with these options included as
         /// capabilities. This does not copy the options. Further changes will be
         /// reflected in the returned capabilities.
@@ -354,9 +307,9 @@ namespace OpenQA.Selenium.Firefox
                 firefoxOptions[FirefoxProfileCapability] = this.profile.ToBase64String();
             }
 
-            if (!string.IsNullOrEmpty(this.browserBinaryLocation))
+            if (!string.IsNullOrEmpty(this.binaryLocation))
             {
-                firefoxOptions[FirefoxBinaryCapability] = this.browserBinaryLocation;
+                firefoxOptions[FirefoxBinaryCapability] = this.binaryLocation;
             }
 
             if (this.logLevel != FirefoxDriverLogLevel.Default)

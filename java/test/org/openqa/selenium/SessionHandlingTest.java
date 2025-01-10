@@ -18,21 +18,19 @@
 package org.openqa.selenium;
 
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.openqa.selenium.testing.drivers.Browser.LEGACY_FIREFOX_XPI;
 import static org.openqa.selenium.testing.drivers.Browser.FIREFOX;
 import static org.openqa.selenium.testing.drivers.Browser.SAFARI;
 
-import org.junit.Test;
-import org.openqa.selenium.testing.Ignore;
-import org.openqa.selenium.testing.JUnit4TestBase;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.testing.JupiterTestBase;
 import org.openqa.selenium.testing.NoDriverAfterTest;
 import org.openqa.selenium.testing.NotYetImplemented;
 
-public class SessionHandlingTest extends JUnit4TestBase {
+class SessionHandlingTest extends JupiterTestBase {
 
   @NoDriverAfterTest
   @Test
-  public void callingQuitMoreThanOnceOnASessionIsANoOp() {
+  void callingQuitMoreThanOnceOnASessionIsANoOp() {
     driver.quit();
     sleepTight(3000);
     driver.quit();
@@ -40,7 +38,6 @@ public class SessionHandlingTest extends JUnit4TestBase {
 
   @NoDriverAfterTest
   @Test
-  @Ignore(value = LEGACY_FIREFOX_XPI)
   @NotYetImplemented(value = FIREFOX, reason = "https://github.com/mozilla/geckodriver/issues/689")
   @NotYetImplemented(SAFARI)
   public void callingQuitAfterClosingTheLastWindowIsANoOp() {
@@ -51,8 +48,7 @@ public class SessionHandlingTest extends JUnit4TestBase {
 
   @NoDriverAfterTest
   @Test
-  @Ignore(value = LEGACY_FIREFOX_XPI)
-  public void callingAnyOperationAfterClosingTheLastWindowShouldThrowAnException() {
+  void callingAnyOperationAfterClosingTheLastWindowShouldThrowAnException() {
     driver.close();
     sleepTight(3000);
     assertThatExceptionOfType(NoSuchSessionException.class).isThrownBy(driver::getCurrentUrl);
@@ -60,14 +56,14 @@ public class SessionHandlingTest extends JUnit4TestBase {
 
   @NoDriverAfterTest
   @Test
-  public void callingAnyOperationAfterQuitShouldThrowAnException() {
+  void callingAnyOperationAfterQuitShouldThrowAnException() {
     driver.quit();
     sleepTight(3000);
     assertThatExceptionOfType(NoSuchSessionException.class).isThrownBy(driver::getCurrentUrl);
   }
 
   @Test
-  public void shouldContinueAfterSleep() {
+  void shouldContinueAfterSleep() {
     sleepTight(10000);
     driver.getWindowHandle(); // should not throw
   }
@@ -79,5 +75,4 @@ public class SessionHandlingTest extends JUnit4TestBase {
       e.printStackTrace();
     }
   }
-
 }

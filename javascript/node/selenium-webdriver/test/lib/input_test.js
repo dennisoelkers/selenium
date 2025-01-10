@@ -17,11 +17,11 @@
 
 'use strict'
 
-const assert = require('assert')
-const command = require('../../lib/command')
-const error = require('../../lib/error')
-const input = require('../../lib/input')
-const { WebElement } = require('../../lib/webdriver')
+const assert = require('node:assert')
+const command = require('selenium-webdriver/lib/command')
+const error = require('selenium-webdriver/lib/error')
+const input = require('selenium-webdriver/lib/input')
+const { WebElement } = require('selenium-webdriver/lib/webdriver')
 
 describe('input.Actions', function () {
   class StubExecutor {
@@ -34,21 +34,13 @@ describe('input.Actions', function () {
       const name = command.getName()
       const parameters = command.getParameters()
       this.commands.push({ name, parameters })
-      return (
-        this.responses.shift() ||
-        Promise.reject(new Error('unexpected command: ' + command.getName()))
-      )
+      return this.responses.shift() || Promise.reject(new Error('unexpected command: ' + command.getName()))
     }
   }
 
   describe('perform()', function () {
     it('omits idle devices', async function () {
-      let executor = new StubExecutor(
-        Promise.resolve(),
-        Promise.resolve(),
-        Promise.resolve(),
-        Promise.resolve()
-      )
+      let executor = new StubExecutor(Promise.resolve(), Promise.resolve(), Promise.resolve(), Promise.resolve())
 
       await new input.Actions(executor).perform()
       assert.deepStrictEqual(executor.commands, [])
@@ -71,6 +63,11 @@ describe('input.Actions', function () {
                 id: 'default mouse',
                 type: 'pointer',
                 parameters: { pointerType: 'mouse' },
+                actions: [{ type: 'pause', duration: 1 }],
+              },
+              {
+                id: 'default wheel',
+                type: 'wheel',
                 actions: [{ type: 'pause', duration: 1 }],
               },
             ],
@@ -144,6 +141,16 @@ describe('input.Actions', function () {
                 parameters: { pointerType: 'mouse' },
                 actions: [{ type: 'pause', duration: 3 }],
               },
+              {
+                id: 'default wheel',
+                type: 'wheel',
+                actions: [
+                  {
+                    duration: 3,
+                    type: 'pause',
+                  },
+                ],
+              },
             ],
           },
         },
@@ -177,6 +184,14 @@ describe('input.Actions', function () {
                   { type: 'pause', duration: 3 },
                 ],
               },
+              {
+                id: 'default wheel',
+                type: 'wheel',
+                actions: [
+                  { type: 'pause', duration: 0 },
+                  { type: 'pause', duration: 3 },
+                ],
+              },
             ],
           },
         },
@@ -187,10 +202,7 @@ describe('input.Actions', function () {
       const executor = new StubExecutor(Promise.resolve())
       const actions = new input.Actions(executor)
 
-      await actions
-        .pause(100, actions.keyboard())
-        .pause(100, actions.mouse())
-        .perform()
+      await actions.pause(100, actions.keyboard()).pause(100, actions.mouse()).perform()
 
       assert.deepStrictEqual(executor.commands, [
         {
@@ -224,10 +236,7 @@ describe('input.Actions', function () {
       const executor = new StubExecutor(Promise.resolve())
       const actions = new input.Actions(executor, { async: true })
 
-      await actions
-        .pause(100, actions.keyboard())
-        .pause(100, actions.mouse())
-        .perform()
+      await actions.pause(100, actions.keyboard()).pause(100, actions.mouse()).perform()
 
       assert.deepStrictEqual(executor.commands, [
         {
@@ -301,10 +310,7 @@ describe('input.Actions', function () {
     it('rejects keys that are not a single code point', function () {
       const executor = new StubExecutor(Promise.resolve())
       const actions = new input.Actions(executor)
-      assert.throws(
-        () => actions.keyDown('\u1E9B\u0323'),
-        error.InvalidArgumentError
-      )
+      assert.throws(() => actions.keyDown('\u1E9B\u0323'), error.InvalidArgumentError)
     })
   })
 
@@ -332,10 +338,7 @@ describe('input.Actions', function () {
     it('rejects keys that are not a single code point', function () {
       const executor = new StubExecutor(Promise.resolve())
       const actions = new input.Actions(executor)
-      assert.throws(
-        () => actions.keyUp('\u1E9B\u0323'),
-        error.InvalidArgumentError
-      )
+      assert.throws(() => actions.keyUp('\u1E9B\u0323'), error.InvalidArgumentError)
     })
   })
 
@@ -523,7 +526,19 @@ describe('input.Actions', function () {
                 type: 'pointer',
                 parameters: { pointerType: 'mouse' },
                 actions: [
-                  { type: 'pointerDown', button: input.Button.LEFT },
+                  {
+                    type: 'pointerDown',
+                    button: input.Button.LEFT,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
+                  },
                   { type: 'pointerUp', button: input.Button.LEFT },
                 ],
               },
@@ -556,8 +571,29 @@ describe('input.Actions', function () {
                     duration: 100,
                     x: 0,
                     y: 0,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
                   },
-                  { type: 'pointerDown', button: input.Button.LEFT },
+                  {
+                    type: 'pointerDown',
+                    button: input.Button.LEFT,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
+                  },
                   { type: 'pointerUp', button: input.Button.LEFT },
                 ],
               },
@@ -601,8 +637,29 @@ describe('input.Actions', function () {
                     duration: 100,
                     x: 0,
                     y: 0,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
                   },
-                  { type: 'pointerDown', button: input.Button.LEFT },
+                  {
+                    type: 'pointerDown',
+                    button: input.Button.LEFT,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
+                  },
                   { type: 'pointerUp', button: input.Button.LEFT },
                   { type: 'pause', duration: 0 },
                   { type: 'pause', duration: 0 },
@@ -640,14 +697,44 @@ describe('input.Actions', function () {
                     origin: e1,
                     x: 0,
                     y: 0,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
                   },
-                  { type: 'pointerDown', button: input.Button.LEFT },
+                  {
+                    type: 'pointerDown',
+                    button: input.Button.LEFT,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
+                  },
                   {
                     type: 'pointerMove',
                     duration: 100,
                     origin: e2,
                     x: 0,
                     y: 0,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
                   },
                   { type: 'pointerUp', button: input.Button.LEFT },
                 ],
@@ -681,14 +768,44 @@ describe('input.Actions', function () {
                     origin: e1,
                     x: 0,
                     y: 0,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
                   },
-                  { type: 'pointerDown', button: input.Button.LEFT },
+                  {
+                    type: 'pointerDown',
+                    button: input.Button.LEFT,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
+                  },
                   {
                     type: 'pointerMove',
                     duration: 100,
                     origin: input.Origin.POINTER,
                     x: 30,
                     y: 40,
+                    altitudeAngle: 0,
+                    azimuthAngle: 0,
+                    width: 0,
+                    height: 0,
+                    pressure: 0,
+                    tangentialPressure: 0,
+                    tiltX: 0,
+                    tiltY: 0,
+                    twist: 0,
                   },
                   { type: 'pointerUp', button: input.Button.LEFT },
                 ],
@@ -705,30 +822,12 @@ describe('input.Actions', function () {
       const e = new WebElement(null, 'abc123')
 
       assert.throws(() => actions.dragAndDrop(e), error.InvalidArgumentError)
-      assert.throws(
-        () => actions.dragAndDrop(e, null),
-        error.InvalidArgumentError
-      )
-      assert.throws(
-        () => actions.dragAndDrop(e, {}),
-        error.InvalidArgumentError
-      )
-      assert.throws(
-        () => actions.dragAndDrop(e, { x: 0 }),
-        error.InvalidArgumentError
-      )
-      assert.throws(
-        () => actions.dragAndDrop(e, { y: 0 }),
-        error.InvalidArgumentError
-      )
-      assert.throws(
-        () => actions.dragAndDrop(e, { x: 0, y: 'a' }),
-        error.InvalidArgumentError
-      )
-      assert.throws(
-        () => actions.dragAndDrop(e, { x: 'a', y: 0 }),
-        error.InvalidArgumentError
-      )
+      assert.throws(() => actions.dragAndDrop(e, null), error.InvalidArgumentError)
+      assert.throws(() => actions.dragAndDrop(e, {}), error.InvalidArgumentError)
+      assert.throws(() => actions.dragAndDrop(e, { x: 0 }), error.InvalidArgumentError)
+      assert.throws(() => actions.dragAndDrop(e, { y: 0 }), error.InvalidArgumentError)
+      assert.throws(() => actions.dragAndDrop(e, { x: 0, y: 'a' }), error.InvalidArgumentError)
+      assert.throws(() => actions.dragAndDrop(e, { x: 'a', y: 0 }), error.InvalidArgumentError)
     })
   })
 })

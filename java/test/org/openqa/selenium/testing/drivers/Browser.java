@@ -17,6 +17,13 @@
 
 package org.openqa.selenium.testing.drivers;
 
+import static org.openqa.selenium.remote.CapabilityType.BROWSER_NAME;
+import static org.openqa.selenium.remote.CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.logging.Logger;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.ImmutableCapabilities;
 import org.openqa.selenium.chrome.ChromeDriverInfo;
@@ -25,20 +32,10 @@ import org.openqa.selenium.edge.EdgeDriverInfo;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.firefox.GeckoDriverInfo;
-import org.openqa.selenium.firefox.xpi.XpiDriverInfo;
 import org.openqa.selenium.ie.InternetExplorerDriverInfo;
 import org.openqa.selenium.ie.InternetExplorerOptions;
-import org.openqa.selenium.opera.OperaDriverInfo;
-import org.openqa.selenium.opera.OperaOptions;
 import org.openqa.selenium.safari.SafariDriverInfo;
 import org.openqa.selenium.safari.SafariOptions;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
-
-import static org.openqa.selenium.remote.CapabilityType.BROWSER_NAME;
 
 public enum Browser {
   ALL(new ImmutableCapabilities(), "any", false),
@@ -53,20 +50,25 @@ public enum Browser {
       }
 
       if (Boolean.getBoolean("webdriver.headless")) {
-        options.setHeadless(true);
+        options.addArguments("--headless=new");
       }
 
       options.addArguments(
-        "disable-extensions",
-        "disable-infobars",
-        "disable-breakpad",
-        "disable-dev-shm-usage",
-        "no-sandbox");
+          "disable-infobars",
+          "disable-breakpad",
+          "disable-dev-shm-usage",
+          "no-sandbox",
+          "disable-search-engine-choice-screen");
 
       Map<String, Object> prefs = new HashMap<>();
       prefs.put("exit_type", "None");
       prefs.put("exited_cleanly", true);
       options.setExperimentalOption("prefs", prefs);
+
+      options.enableBiDi();
+
+      // Reason: https://github.com/SeleniumHQ/selenium/pull/14429#issuecomment-2311614822
+      options.setCapability(UNHANDLED_PROMPT_BEHAVIOUR, "ignore");
 
       return options;
     }
@@ -82,22 +84,32 @@ public enum Browser {
       }
 
       if (Boolean.getBoolean("webdriver.headless")) {
-        options.setHeadless(true);
+        options.addArguments("--headless=new");
       }
 
-      options.addArguments("disable-extensions", "disable-infobars", "disable-breakpad");
+      options.addArguments(
+          "disable-extensions",
+          "disable-infobars",
+          "disable-breakpad",
+          "disable-dev-shm-usage",
+          "no-sandbox");
 
       Map<String, Object> prefs = new HashMap<>();
       prefs.put("exit_type", "None");
       prefs.put("exited_cleanly", true);
       options.setExperimentalOption("prefs", prefs);
 
+      options.enableBiDi();
+      options.setCapability(UNHANDLED_PROMPT_BEHAVIOUR, "ignore");
+
       return options;
     }
   },
   HTMLUNIT(
-    new ImmutableCapabilities(BROWSER_NAME, org.openqa.selenium.remote.Browser.HTMLUNIT.browserName()), "HtmlUnit", false),
-  LEGACY_FIREFOX_XPI(new FirefoxOptions().setLegacy(true), new XpiDriverInfo().getDisplayName(), false),
+      new ImmutableCapabilities(
+          BROWSER_NAME, org.openqa.selenium.remote.Browser.HTMLUNIT.browserName()),
+      "HtmlUnit",
+      false),
   IE(new InternetExplorerOptions(), new InternetExplorerDriverInfo().getDisplayName(), false) {
     @Override
     public Capabilities getCapabilities() {
@@ -124,29 +136,17 @@ public enum Browser {
       }
 
       if (Boolean.getBoolean("webdriver.headless")) {
-        options.setHeadless(true);
+        options.addArguments("-headless");
       }
 
-      return options;
-    }
-  },
-  LEGACY_OPERA(new OperaOptions(), new OperaDriverInfo().getDisplayName(), false),
-  OPERA(new OperaOptions(), new OperaDriverInfo().getDisplayName(), false) {
-    @Override
-    public Capabilities getCapabilities() {
-      OperaOptions options = new OperaOptions();
-      options.addArguments("disable-extensions");
-      String operaPath = System.getProperty("webdriver.opera.binary");
-      if (operaPath != null) {
-        options.setBinary(new File(operaPath));
-      }
+      options.enableBiDi();
 
       return options;
     }
   },
   SAFARI(new SafariOptions(), new SafariDriverInfo().getDisplayName(), false);
 
-  private static final Logger log = Logger.getLogger(Browser.class.getName());
+  private static final Logger LOG = Logger.getLogger(Browser.class.getName());
   private final Capabilities canonicalCapabilities;
   private final String displayName;
   private final boolean supportsCdp;
@@ -160,17 +160,12 @@ public enum Browser {
   public static Browser detect() {
     String browserName = System.getProperty("selenium.browser");
     if (browserName == null) {
-      log.info("No browser detected, returning null");
+      LOG.info("No browser detected, returning null");
       return null;
     }
 
     if ("ff".equalsIgnoreCase(browserName) || "firefox".equalsIgnoreCase(browserName)) {
-      if (System.getProperty("webdriver.firefox.marionette") == null ||
-          Boolean.getBoolean("webdriver.firefox.marionette")) {
-        return FIREFOX;
-      } else {
-        return LEGACY_FIREFOX_XPI;
-      }
+      return FIREFOX;
     }
 
     if ("edge".equalsIgnoreCase(browserName)) {
@@ -178,9 +173,10 @@ public enum Browser {
     }
 
     try {
-      return Browser.valueOf(browserName.toUpperCase());
+      return Browser.valueOf(browserName.toUpperCase(Locale.ENGLISH));
     } catch (IllegalArgumentException e) {
-      throw new RuntimeException(String.format("Cannot determine driver from name %s", browserName), e);
+      throw new RuntimeException(
+          String.format("Cannot determine driver from name %s", browserName), e);
     }
   }
 

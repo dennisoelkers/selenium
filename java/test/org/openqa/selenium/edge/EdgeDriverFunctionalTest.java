@@ -17,8 +17,21 @@
 
 package org.openqa.selenium.edge;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.openqa.selenium.testing.drivers.Browser.EDGE;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chromium.ChromiumNetworkConditions;
@@ -26,53 +39,66 @@ import org.openqa.selenium.chromium.HasCasting;
 import org.openqa.selenium.chromium.HasCdp;
 import org.openqa.selenium.chromium.HasNetworkConditions;
 import org.openqa.selenium.chromium.HasPermissions;
+import org.openqa.selenium.net.PortProber;
 import org.openqa.selenium.remote.RemoteWebDriverBuilder;
 import org.openqa.selenium.remote.http.ClientConfig;
-import org.openqa.selenium.testing.JUnit4TestBase;
+import org.openqa.selenium.testing.Ignore;
+import org.openqa.selenium.testing.JupiterTestBase;
+import org.openqa.selenium.testing.NoDriverBeforeTest;
 import org.openqa.selenium.testing.drivers.WebDriverBuilder;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.fail;
-import static org.assertj.core.api.Assumptions.assumeThat;
-
-public class EdgeDriverFunctionalTest extends JUnit4TestBase {
+class EdgeDriverFunctionalTest extends JupiterTestBase {
 
   private final String CLIPBOARD_READ = "clipboard-read";
   private final String CLIPBOARD_WRITE = "clipboard-write";
 
   @Test
-  public void builderGeneratesDefaultChromeOptions() {
-    WebDriver driver = EdgeDriver.builder().build();
-    driver.quit();
+  @NoDriverBeforeTest
+  public void builderGeneratesDefaultEdgeOptions() {
+    localDriver = EdgeDriver.builder().build();
+    Capabilities capabilities = ((EdgeDriver) localDriver).getCapabilities();
+
+    assertThat(localDriver.manage().timeouts().getImplicitWaitTimeout()).isEqualTo(Duration.ZERO);
+    assertThat(capabilities.getCapability("browserName")).isEqualTo("msedge");
   }
 
   @Test
-  public void builderOverridesDefaultChromeOptions() {
+  @NoDriverBeforeTest
+  public void builderOverridesDefaultEdgeOptions() {
     EdgeOptions options = new EdgeOptions();
     options.setImplicitWaitTimeout(Duration.ofMillis(1));
-    WebDriver driver = EdgeDriver.builder().oneOf(options).build();
-    assertThat(driver.manage().timeouts().getImplicitWaitTimeout()).isEqualTo(Duration.ofMillis(1));
-
-    driver.quit();
+    localDriver = EdgeDriver.builder().oneOf(options).build();
+    assertThat(localDriver.manage().timeouts().getImplicitWaitTimeout())
+        .isEqualTo(Duration.ofMillis(1));
   }
 
   @Test
-  public void builderWithClientConfigthrowsException() {
+  @NoDriverBeforeTest
+  public void driverOverridesDefaultClientConfig() {
+    assertThatThrownBy(
+            () -> {
+              ClientConfig clientConfig =
+                  ClientConfig.defaultConfig().readTimeout(Duration.ofSeconds(0));
+              localDriver =
+                  new EdgeDriver(
+                      EdgeDriverService.createDefaultService(), new EdgeOptions(), clientConfig);
+            })
+        .isInstanceOf(SessionNotCreatedException.class);
+  }
+
+  @Test
+  void builderWithClientConfigThrowsException() {
     ClientConfig clientConfig = ClientConfig.defaultConfig().readTimeout(Duration.ofMinutes(1));
     RemoteWebDriverBuilder builder = EdgeDriver.builder().config(clientConfig);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
-      .isThrownBy(builder::build)
-      .withMessage("ClientConfig instances do not work for Local Drivers");
+        .isThrownBy(builder::build)
+        .withMessage("ClientConfig instances do not work for Local Drivers");
   }
 
   @Test
-  public void canSetPermission() {
+  @Ignore(value = EDGE, reason = "https://bugs.chromium.org/p/chromedriver/issues/detail?id=4350")
+  void canSetPermission() {
     HasPermissions permissions = (HasPermissions) driver;
 
     driver.get(pages.clicksPage);
@@ -87,41 +113,41 @@ public class EdgeDriverFunctionalTest extends JUnit4TestBase {
   }
 
   @Test
+  @NoDriverBeforeTest
   public void canSetPermissionHeadless() {
     EdgeOptions options = new EdgeOptions();
-    options.setHeadless(true);
+    options.addArguments("--headless=new");
 
-    //TestEdgeDriver is not honoring headless request; using EdgeDriver instead
-    WebDriver driver = new WebDriverBuilder().get(options);
-    try {
-      HasPermissions permissions = (HasPermissions) driver;
+    localDriver = new WebDriverBuilder().get(options);
+    HasPermissions permissions = (HasPermissions) localDriver;
 
-      driver.get(pages.clicksPage);
-      assertThat(checkPermission(driver, CLIPBOARD_READ)).isEqualTo("prompt");
-      assertThat(checkPermission(driver, CLIPBOARD_WRITE)).isEqualTo("prompt");
+    localDriver.get(pages.clicksPage);
+    assertThat(checkPermission(localDriver, CLIPBOARD_READ)).isEqualTo("prompt");
+    assertThat(checkPermission(localDriver, CLIPBOARD_WRITE)).isEqualTo("granted");
 
-      permissions.setPermission(CLIPBOARD_READ, "granted");
-      permissions.setPermission(CLIPBOARD_WRITE, "granted");
+    permissions.setPermission(CLIPBOARD_READ, "granted");
+    permissions.setPermission(CLIPBOARD_WRITE, "prompt");
 
-      assertThat(checkPermission(driver, CLIPBOARD_READ)).isEqualTo("granted");
-      assertThat(checkPermission(driver, CLIPBOARD_WRITE)).isEqualTo("granted");
-    } finally {
-      driver.quit();
-    }
+    assertThat(checkPermission(localDriver, CLIPBOARD_READ)).isEqualTo("granted");
+    assertThat(checkPermission(localDriver, CLIPBOARD_WRITE)).isEqualTo("prompt");
   }
 
-  public String checkPermission(WebDriver driver, String permission){
+  public String checkPermission(WebDriver driver, String permission) {
     @SuppressWarnings("unchecked")
-    Map<String, Object> result = (Map<String, Object>) ((JavascriptExecutor) driver).executeAsyncScript(
-      "callback = arguments[arguments.length - 1];"
-        + "callback(navigator.permissions.query({"
-        + "name: arguments[0]"
-        + "}));", permission);
+    Map<String, Object> result =
+        (Map<String, Object>)
+            ((JavascriptExecutor) driver)
+                .executeAsyncScript(
+                    "callback = arguments[arguments.length - 1];"
+                        + "callback(navigator.permissions.query({"
+                        + "name: arguments[0]"
+                        + "}));",
+                    permission);
     return result.get("state").toString();
   }
 
   @Test
-  public void canCast() throws InterruptedException {
+  void canCast() throws InterruptedException {
     HasCasting caster = (HasCasting) driver;
 
     // Does not get list the first time it is called
@@ -130,7 +156,7 @@ public class EdgeDriverFunctionalTest extends JUnit4TestBase {
     List<Map<String, String>> castSinks = caster.getCastSinks();
 
     // Can not call these commands if there are no sinks available
-    if (castSinks.size() > 0) {
+    if (!castSinks.isEmpty()) {
       String deviceName = castSinks.get(0).get("name");
 
       caster.startTabMirroring(deviceName);
@@ -139,7 +165,7 @@ public class EdgeDriverFunctionalTest extends JUnit4TestBase {
   }
 
   @Test
-  public void canManageNetworkConditions() {
+  void canManageNetworkConditions() {
     HasNetworkConditions conditions = (HasNetworkConditions) driver;
 
     ChromiumNetworkConditions networkConditions = new ChromiumNetworkConditions();
@@ -161,12 +187,30 @@ public class EdgeDriverFunctionalTest extends JUnit4TestBase {
   }
 
   @Test
-  public void canExecuteCdpCommands() {
+  void canExecuteCdpCommands() {
     HasCdp cdp = (HasCdp) driver;
 
     Map<String, Object> parameters = Map.of("url", pages.simpleTestPage);
     cdp.executeCdpCommand("Page.navigate", parameters);
 
+    assertThat(driver.getTitle()).isEqualTo("Hello WebDriver");
+  }
+
+  @Test
+  @NoDriverBeforeTest
+  void shouldLaunchSuccessfullyWithArabicDate() {
+    Locale arabicLocale = new Locale("ar", "EG");
+    Locale.setDefault(arabicLocale);
+    Locale.setDefault(Locale.US);
+
+    int port = PortProber.findFreePort();
+    EdgeDriverService.Builder builder = new EdgeDriverService.Builder();
+    builder.usingPort(port);
+    EdgeDriverService service = builder.build();
+
+    driver = new EdgeDriver(service, (EdgeOptions) EDGE.getCapabilities());
+
+    driver.get(pages.simpleTestPage);
     assertThat(driver.getTitle()).isEqualTo("Hello WebDriver");
   }
 }

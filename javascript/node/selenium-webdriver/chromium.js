@@ -36,17 +36,12 @@
  *     a unique browser session with a clean user profile (unless otherwise
  *     configured through the {@link Options} class).
  *
- * __Headless Chromium__ <a id="headless"></a>
- *
- * To start the browser in headless mode, simply call
- * {@linkplain Options#headless Options.headless()}.
- *
  *     let chrome = require('selenium-webdriver/chrome');
  *     let {Builder} = require('selenium-webdriver');
  *
  *     let driver = new Builder()
  *         .forBrowser('chrome')
- *         .setChromeOptions(new chrome.Options().headless())
+ *         .setChromeOptions(new chrome.Options())
  *         .build();
  *
  * __Customizing the Chromium WebDriver Server__ <a id="custom-server"></a>
@@ -71,6 +66,8 @@
  *     // configure browser options ...
  *
  *     let driver = chrome.Driver.createSession(options, service);
+ *
+ *     @module selenium-webdriver/chromium
  */
 
 'use strict'
@@ -83,6 +80,7 @@ const error = require('./lib/error')
 const Symbols = require('./lib/symbols')
 const webdriver = require('./lib/webdriver')
 const remote = require('./remote')
+const { getBinaryPaths } = require('./common/driverFinder')
 
 /**
  * Custom command names supported by Chromium WebDriver.
@@ -92,6 +90,7 @@ const Command = {
   LAUNCH_APP: 'launchApp',
   GET_NETWORK_CONDITIONS: 'getNetworkConditions',
   SET_NETWORK_CONDITIONS: 'setNetworkConditions',
+  DELETE_NETWORK_CONDITIONS: 'deleteNetworkConditions',
   SEND_DEVTOOLS_COMMAND: 'sendDevToolsCommand',
   SEND_AND_GET_DEVTOOLS_COMMAND: 'sendAndGetDevToolsCommand',
   SET_PERMISSION: 'setPermission',
@@ -122,66 +121,39 @@ function createExecutor(url, vendorPrefix) {
  * @param {!http.Executor} executor the executor to configure.
  */
 function configureExecutor(executor, vendorPrefix) {
-  executor.defineCommand(
-    Command.LAUNCH_APP,
-    'POST',
-    '/session/:sessionId/chromium/launch_app'
-  )
-  executor.defineCommand(
-    Command.GET_NETWORK_CONDITIONS,
-    'GET',
-    '/session/:sessionId/chromium/network_conditions'
-  )
-  executor.defineCommand(
-    Command.SET_NETWORK_CONDITIONS,
-    'POST',
-    '/session/:sessionId/chromium/network_conditions'
-  )
-  executor.defineCommand(
-    Command.SEND_DEVTOOLS_COMMAND,
-    'POST',
-    '/session/:sessionId/chromium/send_command'
-  )
+  executor.defineCommand(Command.LAUNCH_APP, 'POST', '/session/:sessionId/chromium/launch_app')
+  executor.defineCommand(Command.GET_NETWORK_CONDITIONS, 'GET', '/session/:sessionId/chromium/network_conditions')
+  executor.defineCommand(Command.SET_NETWORK_CONDITIONS, 'POST', '/session/:sessionId/chromium/network_conditions')
+  executor.defineCommand(Command.DELETE_NETWORK_CONDITIONS, 'DELETE', '/session/:sessionId/chromium/network_conditions')
+  executor.defineCommand(Command.SEND_DEVTOOLS_COMMAND, 'POST', '/session/:sessionId/chromium/send_command')
   executor.defineCommand(
     Command.SEND_AND_GET_DEVTOOLS_COMMAND,
     'POST',
-    '/session/:sessionId/chromium/send_command_and_get_result'
+    '/session/:sessionId/chromium/send_command_and_get_result',
   )
-  executor.defineCommand(
-    Command.SET_PERMISSION,
-    'POST',
-    '/session/:sessionId/permissions'
-  )
-  executor.defineCommand(
-    Command.GET_CAST_SINKS,
-    'GET',
-    `/session/:sessionId/${vendorPrefix}/cast/get_sinks`
-  )
+  executor.defineCommand(Command.SET_PERMISSION, 'POST', '/session/:sessionId/permissions')
+  executor.defineCommand(Command.GET_CAST_SINKS, 'GET', `/session/:sessionId/${vendorPrefix}/cast/get_sinks`)
   executor.defineCommand(
     Command.SET_CAST_SINK_TO_USE,
     'POST',
-    `/session/:sessionId/${vendorPrefix}/cast/set_sink_to_use`
+    `/session/:sessionId/${vendorPrefix}/cast/set_sink_to_use`,
   )
   executor.defineCommand(
     Command.START_CAST_DESKTOP_MIRRORING,
     'POST',
-    `/session/:sessionId/${vendorPrefix}/cast/start_desktop_mirroring`
+    `/session/:sessionId/${vendorPrefix}/cast/start_desktop_mirroring`,
   )
   executor.defineCommand(
     Command.START_CAST_TAB_MIRRORING,
     'POST',
-    `/session/:sessionId/${vendorPrefix}/cast/start_tab_mirroring`
+    `/session/:sessionId/${vendorPrefix}/cast/start_tab_mirroring`,
   )
   executor.defineCommand(
     Command.GET_CAST_ISSUE_MESSAGE,
     'GET',
-    `/session/:sessionId/${vendorPrefix}/cast/get_issue_message`
+    `/session/:sessionId/${vendorPrefix}/cast/get_issue_message`,
   )
-  executor.defineCommand(
-    Command.STOP_CASTING,
-    'POST',
-    `/session/:sessionId/${vendorPrefix}/cast/stop_casting`
-  )
+  executor.defineCommand(Command.STOP_CASTING, 'POST', `/session/:sessionId/${vendorPrefix}/cast/stop_casting`)
 }
 
 /**
@@ -304,25 +276,6 @@ class Options extends Capabilities {
   }
 
   /**
-   * Configures the driver to start the browser in headless mode.
-   *
-   * > __NOTE:__ Resizing the browser window in headless mode is only supported
-   * > in Chromium 60+. Users are encouraged to set an initial window size with
-   * > the {@link #windowSize windowSize({width, height})} option.
-   *
-   * > __NOTE__: For security, Chromium disables downloads by default when
-   * > in headless mode (to prevent sites from silently downloading files to
-   * > your machine). After creating a session, you may call
-   * > {@link ./chrome.Driver#setDownloadPath setDownloadPath} to re-enable
-   * > downloads, saving files in the specified directory.
-   *
-   * @return {!Options} A self reference.
-   */
-  headless() {
-    return this.addArguments('headless')
-  }
-
-  /**
    * Sets the initial window size.
    *
    * @param {{width: number, height: number}} size The desired window size.
@@ -336,6 +289,7 @@ class Options extends Capabilities {
         throw TypeError('Arguments must be {width, height} with numbers > 0')
       }
     }
+
     checkArg(width)
     checkArg(height)
     return this.addArguments(`window-size=${width},${height}`)
@@ -594,6 +548,14 @@ class Options extends Capabilities {
     }
     return this
   }
+
+  /**
+   * Enable bidi connection
+   * @returns {!Capabilities}
+   */
+  enableBidi() {
+    return this.set('webSocketUrl', true)
+  }
 }
 
 /**
@@ -631,9 +593,7 @@ class Extensions {
       if (Buffer.isBuffer(extension)) {
         return extension.toString('base64')
       }
-      return io
-        .read(/** @type {string} */ (extension))
-        .then((buffer) => buffer.toString('base64'))
+      return io.read(/** @type {string} */ (extension)).then((buffer) => buffer.toString('base64'))
     })
   }
 }
@@ -645,24 +605,40 @@ class Driver extends webdriver.WebDriver {
   /**
    * Creates a new session with the WebDriver server.
    *
-   * @param {(Capabilities|Options)=} opt_config The configuration options.
+   * @param {(Capabilities|Options)=} caps The configuration options.
    * @param {(remote.DriverService|http.Executor)=} opt_serviceExecutor Either
    *     a  DriverService to use for the remote end, or a preconfigured executor
    *     for an externally managed endpoint. If neither is provided, the
    *     {@linkplain ##getDefaultService default service} will be used by
    *     default.
+   * @param vendorPrefix Either 'goog' or 'ms'
+   * @param vendorCapabilityKey Either 'goog:chromeOptions' or 'ms:edgeOptions'
    * @return {!Driver} A new driver instance.
    */
-  static createSession(caps, opt_serviceExecutor) {
+  static createSession(caps, opt_serviceExecutor, vendorPrefix = '', vendorCapabilityKey = '') {
     let executor
     let onQuit
     if (opt_serviceExecutor instanceof http.Executor) {
       executor = opt_serviceExecutor
-      configureExecutor(executor, this.VENDOR_COMMAND_PREFIX)
+      configureExecutor(executor, vendorPrefix)
     } else {
       let service = opt_serviceExecutor || this.getDefaultService()
-      executor = createExecutor(service.start(), this.VENDOR_COMMAND_PREFIX)
+      if (!service.getExecutable()) {
+        const { driverPath, browserPath } = getBinaryPaths(caps)
+        service.setExecutable(driverPath)
+        if (browserPath) {
+          const vendorOptions = caps.get(vendorCapabilityKey)
+          if (vendorOptions) {
+            vendorOptions['binary'] = browserPath
+            caps.set(vendorCapabilityKey, vendorOptions)
+          } else {
+            caps.set(vendorCapabilityKey, { binary: browserPath })
+          }
+          caps.delete(Capability.BROWSER_VERSION)
+        }
+      }
       onQuit = () => service.kill()
+      executor = createExecutor(service.start(), vendorPrefix)
     }
 
     // W3C spec requires noProxy value to be an array of strings, but Chromium
@@ -692,18 +668,25 @@ class Driver extends webdriver.WebDriver {
    *     when app is launched.
    */
   launchApp(id) {
-    return this.execute(
-      new command.Command(Command.LAUNCH_APP).setParameter('id', id)
-    )
+    return this.execute(new command.Command(Command.LAUNCH_APP).setParameter('id', id))
   }
 
   /**
    * Schedules a command to get Chromium network emulation settings.
    * @return {!Promise} A promise that will be resolved when network
-   *     emulation settings are retrievied.
+   *     emulation settings are retrieved.
    */
   getNetworkConditions() {
     return this.execute(new command.Command(Command.GET_NETWORK_CONDITIONS))
+  }
+
+  /**
+   * Schedules a command to delete Chromium network emulation settings.
+   * @return {!Promise} A promise that will be resolved when network
+   *     emulation settings have been deleted.
+   */
+  deleteNetworkConditions() {
+    return this.execute(new command.Command(Command.DELETE_NETWORK_CONDITIONS))
   }
 
   /**
@@ -724,16 +707,9 @@ class Driver extends webdriver.WebDriver {
    */
   setNetworkConditions(spec) {
     if (!spec || typeof spec !== 'object') {
-      throw TypeError(
-        'setNetworkConditions called with non-network-conditions parameter'
-      )
+      throw TypeError('setNetworkConditions called with non-network-conditions parameter')
     }
-    return this.execute(
-      new command.Command(Command.SET_NETWORK_CONDITIONS).setParameter(
-        'network_conditions',
-        spec
-      )
-    )
+    return this.execute(new command.Command(Command.SET_NETWORK_CONDITIONS).setParameter('network_conditions', spec))
   }
 
   /**
@@ -747,9 +723,7 @@ class Driver extends webdriver.WebDriver {
    */
   sendDevToolsCommand(cmd, params = {}) {
     return this.execute(
-      new command.Command(Command.SEND_DEVTOOLS_COMMAND)
-        .setParameter('cmd', cmd)
-        .setParameter('params', params)
+      new command.Command(Command.SEND_DEVTOOLS_COMMAND).setParameter('cmd', cmd).setParameter('params', params),
     )
   }
 
@@ -766,7 +740,7 @@ class Driver extends webdriver.WebDriver {
     return this.execute(
       new command.Command(Command.SEND_AND_GET_DEVTOOLS_COMMAND)
         .setParameter('cmd', cmd)
-        .setParameter('params', params)
+        .setParameter('params', params),
     )
   }
 
@@ -774,7 +748,7 @@ class Driver extends webdriver.WebDriver {
    * Set a permission state to the given value.
    *
    * @param {string} name A name of the permission to update.
-   * @param {('granted'|'denied'|'prompt')} state State to set permission to.
+   * @param {("granted"|"denied"|"prompt")} state State to set permission to.
    * @returns {!Promise<Object>} A promise that will be resolved when the
    *     command has finished.
    * @see <https://w3c.github.io/permissions/#permission-registry> for valid
@@ -782,9 +756,7 @@ class Driver extends webdriver.WebDriver {
    */
   setPermission(name, state) {
     return this.execute(
-      new command.Command(Command.SET_PERMISSION)
-        .setParameter('descriptor', { name })
-        .setParameter('state', state)
+      new command.Command(Command.SET_PERMISSION).setParameter('descriptor', { name }).setParameter('state', state),
     )
   }
 
@@ -817,10 +789,7 @@ class Driver extends webdriver.WebDriver {
    *   containing the friendly device names of available cast sink targets.
    */
   getCastSinks() {
-    return this.schedule(
-      new command.Command(Command.GET_CAST_SINKS),
-      'Driver.getCastSinks()'
-    )
+    return this.execute(new command.Command(Command.GET_CAST_SINKS))
   }
 
   /**
@@ -831,13 +800,7 @@ class Driver extends webdriver.WebDriver {
    *     when the target device has been selected to respond further webdriver commands.
    */
   setCastSinkToUse(deviceName) {
-    return this.schedule(
-      new command.Command(Command.SET_CAST_SINK_TO_USE).setParameter(
-        'sinkName',
-        deviceName
-      ),
-      'Driver.setCastSinkToUse(' + deviceName + ')'
-    )
+    return this.execute(new command.Command(Command.SET_CAST_SINK_TO_USE).setParameter('sinkName', deviceName))
   }
 
   /**
@@ -847,14 +810,8 @@ class Driver extends webdriver.WebDriver {
    * @return {!promise.Thenable<void>} A promise that will be resolved
    *     when the mirror command has been issued to the device.
    */
-   startDesktopMirroring(deviceName) {
-    return this.schedule(
-      new command.Command(Command.START_CAST_DESKTOP_MIRRORING).setParameter(
-        'sinkName',
-        deviceName
-      ),
-      'Driver.startDesktopMirroring(' + deviceName + ')'
-    )
+  startDesktopMirroring(deviceName) {
+    return this.execute(new command.Command(Command.START_CAST_DESKTOP_MIRRORING).setParameter('sinkName', deviceName))
   }
 
   /**
@@ -865,13 +822,7 @@ class Driver extends webdriver.WebDriver {
    *     when the mirror command has been issued to the device.
    */
   startCastTabMirroring(deviceName) {
-    return this.schedule(
-      new command.Command(Command.START_CAST_TAB_MIRRORING).setParameter(
-        'sinkName',
-        deviceName
-      ),
-      'Driver.startCastTabMirroring(' + deviceName + ')'
-    )
+    return this.execute(new command.Command(Command.START_CAST_TAB_MIRRORING).setParameter('sinkName', deviceName))
   }
 
   /**
@@ -880,10 +831,7 @@ class Driver extends webdriver.WebDriver {
    *     when the mirror command has been issued to the device.
    */
   getCastIssueMessage() {
-    return this.schedule(
-      new command.Command(Command.GET_CAST_ISSUE_MESSAGE),
-      'Driver.getCastIssueMessage()'
-    )
+    return this.execute(new command.Command(Command.GET_CAST_ISSUE_MESSAGE))
   }
 
   /**
@@ -894,13 +842,7 @@ class Driver extends webdriver.WebDriver {
    *     when the stop command has been issued to the device.
    */
   stopCasting(deviceName) {
-    return this.schedule(
-      new command.Command(Command.STOP_CASTING).setParameter(
-        'sinkName',
-        deviceName
-      ),
-      'Driver.stopCasting(' + deviceName + ')'
-    )
+    return this.execute(new command.Command(Command.STOP_CASTING).setParameter('sinkName', deviceName))
   }
 }
 

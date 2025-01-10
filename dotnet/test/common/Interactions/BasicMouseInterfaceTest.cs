@@ -1,9 +1,26 @@
-using System;
+// <copyright file="BasicMouseInterfaceTest.cs" company="Selenium Committers">
+// Licensed to the Software Freedom Conservancy (SFC) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+// </copyright>
+
 using NUnit.Framework;
-using System.Text.RegularExpressions;
-using System.Drawing;
-using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Environment;
+using System;
+using System.Drawing;
 
 namespace OpenQA.Selenium.Interactions
 {
@@ -21,11 +38,22 @@ namespace OpenQA.Selenium.Interactions
         }
 
         [Test]
+        public void ShouldSetActivePointer()
+        {
+            Actions actionProvider = new Actions(driver);
+            actionProvider.SetActivePointer(PointerKind.Mouse, "test mouse");
+
+            PointerInputDevice device = actionProvider.GetActivePointer();
+
+            Assert.That(device.DeviceName, Is.EqualTo("test mouse"));
+        }
+
+        [Test]
         public void ShouldAllowDraggingElementWithMouseMovesItToAnotherList()
         {
             PerformDragAndDropWithMouse();
             IWebElement dragInto = driver.FindElement(By.Id("sortable1"));
-            Assert.AreEqual(6, dragInto.FindElements(By.TagName("li")).Count);
+            Assert.That(dragInto.FindElements(By.TagName("li")), Has.Exactly(6).Items);
         }
 
         // This test is very similar to DraggingElementWithMouse. The only
@@ -88,7 +116,7 @@ namespace OpenQA.Selenium.Interactions
             dropInto = driver.FindElement(By.Id("droppable"));
             string text = dropInto.FindElement(By.TagName("p")).Text;
 
-            Assert.AreEqual("Dropped!", text);
+            Assert.That(text, Is.EqualTo("Dropped!"));
         }
 
         [Test]
@@ -102,7 +130,7 @@ namespace OpenQA.Selenium.Interactions
             IAction dblClick = actionProvider.DoubleClick(toDoubleClick).Build();
 
             dblClick.Perform();
-            Assert.AreEqual("DoubleClicked", toDoubleClick.GetAttribute("value"));
+            Assert.That(toDoubleClick.GetAttribute("value"), Is.EqualTo("DoubleClicked"));
         }
 
         [Test]
@@ -116,7 +144,7 @@ namespace OpenQA.Selenium.Interactions
             IAction contextClick = actionProvider.ContextClick(toContextClick).Build();
 
             contextClick.Perform();
-            Assert.AreEqual("ContextClicked", toContextClick.GetAttribute("value"));
+            Assert.That(toContextClick.GetAttribute("value"), Is.EqualTo("ContextClicked"));
         }
 
         [Test]
@@ -131,7 +159,24 @@ namespace OpenQA.Selenium.Interactions
             IAction contextClick = actionProvider.MoveToElement(toClick).Click().Build();
 
             contextClick.Perform();
-            Assert.AreEqual("Clicked", toClick.GetAttribute("value"), "Value should change to Clicked.");
+            Assert.That(toClick.GetAttribute("value"), Is.EqualTo("Clicked"), "Value should change to Clicked.");
+        }
+
+        [Test]
+        [IgnoreBrowser(Browser.Chrome, "Not working properly in RBE, works locally with pinned browsers")]
+        [IgnoreBrowser(Browser.Edge, "Not working properly in RBE, works locally with pinned browsers")]
+        [IgnoreBrowser(Browser.Firefox, "Not working properly in RBE, works locally with pinned browsers")]
+        public void ShouldMoveToLocation()
+        {
+            driver.Url = mouseInteractionPage;
+
+            Actions actionProvider = new Actions(driver);
+            actionProvider.MoveToLocation(100, 200).Build().Perform();
+
+            IWebElement location = driver.FindElement(By.Id("absolute-location"));
+            var coordinates = location.Text.Split(',');
+            Assert.That(coordinates[0].Trim(), Is.EqualTo("100"));
+            Assert.That(coordinates[1].Trim(), Is.EqualTo("200"));
         }
 
         [Test]
@@ -145,7 +190,6 @@ namespace OpenQA.Selenium.Interactions
         [Test]
         [IgnoreBrowser(Browser.Chrome, "Drivers correctly click at current mouse position without another move, preserving mouse position.")]
         [IgnoreBrowser(Browser.Edge, "Drivers correctly click at current mouse position without another move, preserving mouse position.")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "Drivers correctly click at current mouse position without another move, preserving mouse position.")]
         [IgnoreBrowser(Browser.Firefox, "Drivers correctly click at current mouse position without another move, preserving mouse position.")]
         [IgnoreBrowser(Browser.IE, "Drivers correctly click at current mouse position without another move, preserving mouse position.")]
         [IgnoreBrowser(Browser.Safari, "Drivers correctly click at current mouse position without another move, preserving mouse position.")]
@@ -182,7 +226,6 @@ namespace OpenQA.Selenium.Interactions
         [Test]
         [IgnoreBrowser(Browser.Chrome, "Moving outside of view port throws exception in spec-compliant driver")]
         [IgnoreBrowser(Browser.Edge, "Moving outside of view port throws exception in spec-compliant driver")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "Moving outside of view port throws exception in spec-compliant driver")]
         [IgnoreBrowser(Browser.Firefox, "Moving outside of view port throws exception in spec-compliant driver")]
         [IgnoreBrowser(Browser.IE, "Moving outside of view port throws exception in spec-compliant driver")]
         [IgnoreBrowser(Browser.Safari, "Moving outside of view port throws exception in spec-compliant driver")]
@@ -214,7 +257,6 @@ namespace OpenQA.Selenium.Interactions
         }
 
         [Test]
-        [IgnoreBrowser(Browser.Opera, "API not implemented in driver")]
         public void ShouldClickElementInIFrame()
         {
             driver.Url = clicksPage;
@@ -233,7 +275,6 @@ namespace OpenQA.Selenium.Interactions
         }
 
         [Test]
-        [IgnoreBrowser(Browser.Opera)]
         public void ShouldAllowUsersToHoverOverElements()
         {
             driver.Url = javascriptPage;
@@ -245,14 +286,14 @@ namespace OpenQA.Selenium.Interactions
             }
 
             IWebElement item = driver.FindElement(By.Id("item1"));
-            Assert.AreEqual("", item.Text);
+            Assert.That(item.Text, Is.EqualTo(""));
 
             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].style.background = 'green'", element);
             Actions actionBuilder = new Actions(driver);
             actionBuilder.MoveToElement(element).Perform();
 
             item = driver.FindElement(By.Id("item1"));
-            Assert.AreEqual("Item 1", item.Text);
+            Assert.That(item.Text, Is.EqualTo("Item 1"));
         }
 
         [Test]
@@ -266,7 +307,7 @@ namespace OpenQA.Selenium.Interactions
             IWebElement element = driver.FindElement(By.Id("menu1"));
 
             IWebElement item = driver.FindElement(By.Id("item1"));
-            Assert.AreEqual(string.Empty, item.Text);
+            Assert.That(item.Text, Is.Empty);
 
             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].style.background = 'green'", element);
             new Actions(driver).MoveToElement(element).Perform();
@@ -276,7 +317,7 @@ namespace OpenQA.Selenium.Interactions
 
             WaitFor(ElementTextToNotEqual(item, ""), "Element text was empty after timeout");
 
-            Assert.AreEqual("Item 1", item.Text);
+            Assert.That(item.Text, Is.EqualTo("Item 1"));
         }
 
         [Test]
@@ -302,7 +343,9 @@ namespace OpenQA.Selenium.Interactions
             driver.Url = mouseTrackerPage;
 
             IWebElement trackerDiv = driver.FindElement(By.Id("mousetracker"));
-            new Actions(driver).MoveToElement(trackerDiv, 95, 195).Build().Perform();
+            Size size = trackerDiv.Size;
+
+            new Actions(driver).MoveToElement(trackerDiv, 95 - size.Width / 2, 195 - size.Height / 2).Build().Perform();
 
             IWebElement reporter = driver.FindElement(By.Id("status"));
 
@@ -315,7 +358,9 @@ namespace OpenQA.Selenium.Interactions
             driver.Url = mouseTrackerPage;
 
             IWebElement trackerDiv = driver.FindElement(By.Id("mousetracker"));
-            new Actions(driver).MoveToElement(trackerDiv, 0, 0).Perform();
+            Size size = trackerDiv.Size;
+
+            new Actions(driver).MoveToElement(trackerDiv, -size.Width / 2, -size.Height / 2).Perform();
 
             IWebElement reporter = driver.FindElement(By.Id("status"));
 
@@ -347,13 +392,17 @@ namespace OpenQA.Selenium.Interactions
             int shiftX = redboxPosition.X - greenboxPosition.X;
             int shiftY = redboxPosition.Y - greenboxPosition.Y;
 
-            new Actions(driver).MoveToElement(greenbox, 2, 2).Perform();
+            Size greenBoxSize = greenbox.Size;
+            int xOffset = 2 - greenBoxSize.Width / 2;
+            int yOffset = 2 - greenBoxSize.Height / 2;
+
+            new Actions(driver).MoveToElement(greenbox, xOffset, yOffset).Perform();
             WaitFor(ElementColorToBe(redbox, Color.Green), "element color was not green");
 
-            new Actions(driver).MoveToElement(greenbox, 2, 2).MoveByOffset(shiftX, shiftY).Perform();
+            new Actions(driver).MoveToElement(greenbox, xOffset, yOffset).MoveByOffset(shiftX, shiftY).Perform();
             WaitFor(ElementColorToBe(redbox, Color.Red), "element color was not red");
 
-            new Actions(driver).MoveToElement(greenbox, 2, 2).MoveByOffset(shiftX, shiftY).MoveByOffset(-shiftX, -shiftY).Perform();
+            new Actions(driver).MoveToElement(greenbox, xOffset, yOffset).MoveByOffset(shiftX, shiftY).MoveByOffset(-shiftX, -shiftY).Perform();
             WaitFor(ElementColorToBe(redbox, Color.Green), "element color was not red");
         }
 
@@ -364,15 +413,16 @@ namespace OpenQA.Selenium.Interactions
 
             IWebElement greenbox = driver.FindElement(By.Id("greenbox"));
             IWebElement redbox = driver.FindElement(By.Id("redbox"));
-            Size size = redbox.Size;
+            Size greenSize = greenbox.Size;
+            Size redSize = redbox.Size;
 
-            new Actions(driver).MoveToElement(greenbox, 1, 1).Perform();
+            new Actions(driver).MoveToElement(greenbox, 1 - greenSize.Width / 2, 1 - greenSize.Height / 2).Perform();
             Assert.That(redbox.GetCssValue("background-color"), Is.EqualTo("rgba(0, 128, 0, 1)").Or.EqualTo("rgb(0, 128, 0)"));
 
             new Actions(driver).MoveToElement(redbox).Perform();
             Assert.That(redbox.GetCssValue("background-color"), Is.EqualTo("rgba(255, 0, 0, 1)").Or.EqualTo("rgb(255, 0, 0)"));
 
-            new Actions(driver).MoveToElement(redbox, size.Width + 2, size.Height + 2).Perform();
+            new Actions(driver).MoveToElement(redbox, redSize.Width / 2 + 2, redSize.Height / 2 + 2).Perform();
             Assert.That(redbox.GetCssValue("background-color"), Is.EqualTo("rgba(0, 128, 0, 1)").Or.EqualTo("rgb(0, 128, 0)"));
         }
 
@@ -387,8 +437,8 @@ namespace OpenQA.Selenium.Interactions
         private bool FuzzyPositionMatching(int expectedX, int expectedY, String locationTuple)
         {
             string[] splitString = locationTuple.Split(',');
-            int gotX = int.Parse(splitString[0].Trim());
-            int gotY = int.Parse(splitString[1].Trim());
+            int gotX = Convert.ToInt16(Math.Round(Convert.ToDouble(splitString[0].Trim())));
+            int gotY = Convert.ToInt16(Math.Round(Convert.ToDouble(splitString[1].Trim())));
 
             // Everything within 5 pixels range is OK
             const int ALLOWED_DEVIATION = 5;
@@ -412,7 +462,7 @@ namespace OpenQA.Selenium.Interactions
 
             IAction drop = new Actions(driver).Release(dragInto).Build();
 
-            Assert.AreEqual("Nothing happened.", dragReporter.Text);
+            Assert.That(dragReporter.Text, Is.EqualTo("Nothing happened."));
 
             holdItem.Perform();
             moveToSpecificItem.Perform();
@@ -438,6 +488,11 @@ namespace OpenQA.Selenium.Interactions
         private Func<bool> TitleToBe(string desiredTitle)
         {
             return () => driver.Title == desiredTitle;
+        }
+
+        private Func<bool> ValueToBe(IWebElement element, string desiredValue)
+        {
+            return () => element.GetDomProperty("value") == desiredValue;
         }
 
         private Func<bool> ElementTextToEqual(IWebElement element, string text)

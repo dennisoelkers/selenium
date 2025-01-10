@@ -17,6 +17,9 @@
 
 package org.openqa.selenium.print;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class PageMargin {
   private final double top;
   private final double bottom;
@@ -28,6 +31,13 @@ public class PageMargin {
     this.bottom = 1.0;
     this.left = 1.0;
     this.right = 1.0;
+  }
+
+  public PageMargin(double top, double bottom, double left, double right) {
+    this.top = top;
+    this.bottom = bottom;
+    this.left = left;
+    this.right = right;
   }
 
   public double getTop() {
@@ -44,5 +54,15 @@ public class PageMargin {
 
   public double getRight() {
     return right;
+  }
+
+  public Map<String, Object> toMap() {
+    final Map<String, Object> options = new HashMap<>(7);
+    options.put("top", getTop());
+    options.put("bottom", getBottom());
+    options.put("left", getLeft());
+    options.put("right", getRight());
+
+    return options;
   }
 }

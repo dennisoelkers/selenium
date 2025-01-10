@@ -17,6 +17,16 @@
 
 package org.openqa.selenium.grid.node.local;
 
+import java.io.UncheckedIOException;
+import java.util.ServiceLoader;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.StreamSupport;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.ImmutableCapabilities;
 import org.openqa.selenium.NoSuchSessionException;
@@ -29,6 +39,7 @@ import org.openqa.selenium.grid.data.CreateSessionRequest;
 import org.openqa.selenium.grid.data.SessionClosedEvent;
 import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.SessionFactory;
+import org.openqa.selenium.grid.node.relay.RelaySessionFactory;
 import org.openqa.selenium.internal.Either;
 import org.openqa.selenium.internal.Require;
 import org.openqa.selenium.remote.SessionId;
@@ -36,20 +47,10 @@ import org.openqa.selenium.remote.http.HttpHandler;
 import org.openqa.selenium.remote.http.HttpRequest;
 import org.openqa.selenium.remote.http.HttpResponse;
 
-import java.io.UncheckedIOException;
-import java.util.ServiceLoader;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.StreamSupport;
-
-public class SessionSlot implements
-  HttpHandler,
-  Function<CreateSessionRequest, Either<WebDriverException, ActiveSession>>,
-  Predicate<Capabilities> {
+public class SessionSlot
+    implements HttpHandler,
+        Function<CreateSessionRequest, Either<WebDriverException, ActiveSession>>,
+        Predicate<Capabilities> {
 
   private static final Logger LOG = Logger.getLogger(SessionSlot.class.getName());
   private final EventBus bus;
@@ -58,6 +59,8 @@ public class SessionSlot implements
   private final SessionFactory factory;
   private final AtomicBoolean reserved = new AtomicBoolean(false);
   private final boolean supportingCdp;
+  private final boolean supportingBiDi;
+  private final AtomicLong connectionCounter;
   private ActiveSession currentSession;
 
   public SessionSlot(EventBus bus, Capabilities stereotype, SessionFactory factory) {
@@ -66,6 +69,8 @@ public class SessionSlot implements
     this.stereotype = ImmutableCapabilities.copyOf(Require.nonNull("Stereotype", stereotype));
     this.factory = Require.nonNull("Session factory", factory);
     this.supportingCdp = isSlotSupportingCdp(this.stereotype);
+    this.supportingBiDi = isSlotSupportingBiDi(this.stereotype);
+    this.connectionCounter = new AtomicLong();
   }
 
   public UUID getId() {
@@ -110,8 +115,10 @@ public class SessionSlot implements
       LOG.log(Level.WARNING, "Unable to cleanly close session", e);
     }
     currentSession = null;
+    connectionCounter.set(0);
     release();
     bus.fire(new SessionClosedEvent(id));
+    LOG.info(String.format("Stopping session %s", id));
   }
 
   @Override
@@ -135,8 +142,9 @@ public class SessionSlot implements
     }
 
     if (!test(sessionRequest.getDesiredCapabilities())) {
-      return Either.left(new SessionNotCreatedException("New session request capabilities do not "
-                                                        + "match the stereotype."));
+      return Either.left(
+          new SessionNotCreatedException(
+              "New session request capabilities do not " + "match the stereotype."));
     }
 
     try {
@@ -144,6 +152,7 @@ public class SessionSlot implements
       if (possibleSession.isRight()) {
         ActiveSession session = possibleSession.right();
         currentSession = session;
+        connectionCounter.set(0);
         return Either.right(session);
       } else {
         return Either.left(possibleSession.left());
@@ -158,9 +167,31 @@ public class SessionSlot implements
     return supportingCdp;
   }
 
+  public boolean isSupportingBiDi() {
+    return supportingBiDi;
+  }
+
   private boolean isSlotSupportingCdp(Capabilities stereotype) {
     return StreamSupport.stream(ServiceLoader.load(WebDriverInfo.class).spliterator(), false)
-      .filter(webDriverInfo -> webDriverInfo.isSupporting(stereotype))
-      .anyMatch(WebDriverInfo::isSupportingCdp);
+        .filter(webDriverInfo -> webDriverInfo.isSupporting(stereotype))
+        .anyMatch(WebDriverInfo::isSupportingCdp);
+  }
+
+  private boolean isSlotSupportingBiDi(Capabilities stereotype) {
+    return StreamSupport.stream(ServiceLoader.load(WebDriverInfo.class).spliterator(), false)
+        .filter(webDriverInfo -> webDriverInfo.isSupporting(stereotype))
+        .anyMatch(WebDriverInfo::isSupportingBiDi);
+  }
+
+  public boolean hasRelayFactory() {
+    return factory instanceof RelaySessionFactory;
+  }
+
+  public boolean isRelayServiceUp() {
+    return hasRelayFactory() && ((RelaySessionFactory) factory).isServiceUp();
+  }
+
+  public AtomicLong getConnectionCounter() {
+    return connectionCounter;
   }
 }

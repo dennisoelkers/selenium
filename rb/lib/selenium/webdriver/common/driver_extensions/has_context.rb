@@ -21,14 +21,12 @@ module Selenium
   module WebDriver
     module DriverExtensions
       module HasContext
-
         #
         # Sets the context that Selenium commands are running in using
         #         a `with` statement. The state of the context on the server is
         #         saved before entering the block, and restored upon exiting it.
         #
-        # @param [String] name which permission to set
-        # @param [String] value what to set the permission to
+        # @param [String] value which context gets set (either 'chrome' or 'content')
         #
 
         def context=(value)
@@ -38,7 +36,6 @@ module Selenium
         def context
           @bridge.context
         end
-
       end # HasContext
     end # DriverExtensions
   end # WebDriver

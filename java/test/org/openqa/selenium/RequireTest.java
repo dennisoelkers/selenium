@@ -23,22 +23,20 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.openqa.selenium.internal.Require.nonNull;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.openqa.selenium.internal.Require;
-import org.openqa.selenium.testing.UnitTests;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.internal.Require;
 
-@Category(UnitTests.class)
-public class RequireTest {
+@Tag("UnitTests")
+class RequireTest {
 
   @Test
-  public void shouldCheckBooleanPrecondition() {
+  void shouldCheckBooleanPrecondition() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.precondition(2 * 2 == 5, "this is %s!", "math"))
         .withMessage("this is math!");
@@ -47,14 +45,14 @@ public class RequireTest {
   }
 
   @Test
-  public void shouldReturnObjectArgumentIfItIsNotNull() {
+  void shouldReturnObjectArgumentIfItIsNotNull() {
     String arg = "test";
     assertThat(Require.nonNull("x", arg)).isSameAs(arg);
     assertThat(nonNull("x", arg, "it cannot be null")).isSameAs(arg);
   }
 
   @Test
-  public void canCheckArgumentForNull() {
+  void canCheckArgumentForNull() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.nonNull("x", null))
         .withMessage("x must be set");
@@ -64,14 +62,14 @@ public class RequireTest {
   }
 
   @Test
-  public void shouldReturnObjectArgumentFromCheckerObjectIfItIsNotNull() {
+  void shouldReturnObjectArgumentFromCheckerObjectIfItIsNotNull() {
     String arg = "test";
     assertThat(Require.argument("x", arg).nonNull()).isSameAs(arg);
     assertThat(Require.argument("x", arg).nonNull("it cannot be null")).isSameAs(arg);
   }
 
   @Test
-  public void canCheckArgumentForNullUsingCheckerObject() {
+  void canCheckArgumentForNullUsingCheckerObject() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.argument("x", (Object) null).nonNull())
         .withMessage("x must be set");
@@ -81,7 +79,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckArgumentEquality() {
+  void canCheckArgumentEquality() {
     Object arg1 = null;
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.argument("This", arg1).equalTo("that"))
@@ -94,7 +92,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckArgumentClass() {
+  void canCheckArgumentClass() {
     Object arg1 = null;
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.argument("This", arg1).instanceOf(Number.class))
@@ -107,7 +105,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckDurationArgument() {
+  void canCheckDurationArgument() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.nonNegative((Duration) null))
         .withMessage("Duration must be set");
@@ -116,25 +114,45 @@ public class RequireTest {
         .withMessage("Timeout must be set");
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.nonNegative(Duration.ofSeconds(-5)))
-        .withMessage("Duration must be set to 0 or more");
+        .withMessage("Duration must be 0 or greater");
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.nonNegative("Timeout", Duration.ofSeconds(-5)))
-        .withMessage("Timeout must be set to 0 or more");
+        .withMessage("Timeout must be 0 or greater");
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> Require.positive((Duration) null))
+        .withMessage("Duration must be set");
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> Require.positive("Timeout", (Duration) null))
+        .withMessage("Timeout must be set");
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> Require.positive(Duration.ofSeconds(0)))
+        .withMessage("Duration must be greater than 0");
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> Require.positive("Timeout", Duration.ofSeconds(-5)))
+        .withMessage("Timeout must be greater than 0");
+
     assertThat(Require.nonNegative(Duration.ofSeconds(0))).isEqualTo(Duration.ofSeconds(0));
-    assertThat(Require.nonNegative("Timeout", Duration.ofSeconds(0))).isEqualTo(Duration.ofSeconds(0));
+    assertThat(Require.nonNegative("Timeout", Duration.ofSeconds(0)))
+        .isEqualTo(Duration.ofSeconds(0));
     assertThat(Require.nonNegative(Duration.ofSeconds(5))).isEqualTo(Duration.ofSeconds(5));
-    assertThat(Require.nonNegative("Timeout", Duration.ofSeconds(5))).isEqualTo(Duration.ofSeconds(5));
+    assertThat(Require.nonNegative("Timeout", Duration.ofSeconds(5)))
+        .isEqualTo(Duration.ofSeconds(5));
+
+    assertThat(Require.positive(Duration.ofSeconds(10))).isEqualTo(Duration.ofSeconds(10));
+    assertThat(Require.positive("Timeout", Duration.ofSeconds(10)))
+        .isEqualTo(Duration.ofSeconds(10));
   }
 
   @Test
-  public void canCheckIntegerArgument() {
+  void canCheckIntegerArgument() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.nonNegative("Timeout", (Integer) null))
         .withMessage("Timeout must be set");
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.nonNegative("Timeout", -5))
-        .withMessage("Timeout cannot be less than 0");
-    assertThat(Require.nonNegative("Timeout", 0)).isEqualTo(0);
+        .withMessage("Timeout must be 0 or greater");
+    assertThat(Require.nonNegative("Timeout", 0)).isZero();
     assertThat(Require.nonNegative("Timeout", 5)).isEqualTo(5);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
@@ -150,16 +168,17 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckIntegersWithMessages() {
+  void canCheckIntegersWithMessages() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.positive("Timeout", 0, "Message should only be this"))
         .withMessage("Message should only be this");
   }
 
   @Test
-  public void canCheckIntegerArgumentWithCheckerObject() {
+  void canCheckIntegerArgumentWithCheckerObject() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Timeout", (Integer) null).greaterThan(5, "It should be longer"))
+        .isThrownBy(
+            () -> Require.argument("Timeout", (Integer) null).greaterThan(5, "It should be longer"))
         .withMessage("Timeout must be set");
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> Require.argument("Timeout", 3).greaterThan(5, "It should be longer"))
@@ -168,47 +187,47 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckFileArgument() throws IOException {
+  void canCheckFileArgument() throws IOException {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Target", (File) null).isFile())
+        .isThrownBy(() -> Require.argument("Target", (Path) null).isFile())
         .withMessage("Target must be set");
     File tempFile = File.createTempFile("example", "tmp");
     tempFile.deleteOnExit();
-    assertThat(Require.argument("Target", tempFile).isFile()).isSameAs(tempFile);
+    assertThat(Require.argument("Target", tempFile.toPath()).isFile()).isSameAs(tempFile.toPath());
     File dir = tempFile.getParentFile();
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Target", dir).isFile())
+        .isThrownBy(() -> Require.argument("Target", dir.toPath()).isFile())
         .withMessage("Target must be a regular file: %s", dir);
     if (!tempFile.delete()) {
       fail("Unable to delete temp file");
     }
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Target", tempFile).isFile())
+        .isThrownBy(() -> Require.argument("Target", tempFile.toPath()).isFile())
         .withMessage("Target must exist: %s", tempFile);
   }
 
   @Test
-  public void canCheckDirectoryArgument() throws IOException {
+  void canCheckDirectoryArgument() throws IOException {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Target", (File) null).isDirectory())
+        .isThrownBy(() -> Require.argument("Target", (Path) null).isDirectory())
         .withMessage("Target must be set");
     File tempFile = File.createTempFile("example", "tmp");
     tempFile.deleteOnExit();
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Target", tempFile).isDirectory())
+        .isThrownBy(() -> Require.argument("Target", tempFile.toPath()).isDirectory())
         .withMessage("Target must be a directory: %s", tempFile);
     File dir = tempFile.getParentFile();
-    assertThat(Require.argument("Target", dir).isDirectory()).isSameAs(dir);
+    assertThat(Require.argument("Target", dir.toPath()).isDirectory()).isSameAs(dir.toPath());
     if (!tempFile.delete()) {
       fail("Unable to delete temp file");
     }
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> Require.argument("Target", tempFile).isDirectory())
+        .isThrownBy(() -> Require.argument("Target", tempFile.toPath()).isDirectory())
         .withMessage("Target must exist: %s", tempFile);
   }
 
   @Test
-  public void shouldCheckBooleanState() {
+  void shouldCheckBooleanState() {
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(() -> Require.stateCondition(2 * 2 == 5, "this is %s!", "math"))
         .withMessage("this is math!");
@@ -217,7 +236,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckStateForNull() {
+  void canCheckStateForNull() {
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(() -> Require.state("x", (Object) null).nonNull())
         .withMessage("x must not be null");
@@ -230,7 +249,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckStateClass() {
+  void canCheckStateClass() {
     Object arg1 = null;
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(() -> Require.state("This", arg1).instanceOf(Number.class))
@@ -243,47 +262,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckFileState() throws IOException {
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(() -> Require.state("Target", (File) null).isFile())
-        .withMessage("Target must be set");
-    File tempFile = File.createTempFile("example", "tmp");
-    tempFile.deleteOnExit();
-    assertThat(Require.state("Target", tempFile).isFile()).isSameAs(tempFile);
-    File dir = tempFile.getParentFile();
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(() -> Require.state("Target", dir).isFile())
-        .withMessage("Target must be a regular file: %s", dir);
-    if (!tempFile.delete()) {
-      fail("Unable to delete temp file");
-    }
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(() -> Require.state("Target", tempFile).isFile())
-        .withMessage("Target must exist: %s", tempFile);
-  }
-
-  @Test
-  public void canCheckDirectoryState() throws IOException {
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(() -> Require.state("Target", (File) null).isDirectory())
-        .withMessage("Target must be set");
-    File tempFile = File.createTempFile("example", "tmp");
-    tempFile.deleteOnExit();
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(() -> Require.state("Target", tempFile).isDirectory())
-        .withMessage("Target must be a directory: %s", tempFile);
-    File dir = tempFile.getParentFile();
-    assertThat(Require.state("Target", dir).isDirectory()).isSameAs(dir);
-    if (!tempFile.delete()) {
-      fail("Unable to delete temp file");
-    }
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(() -> Require.state("Target", tempFile).isDirectory())
-        .withMessage("Target must exist: %s", tempFile);
-  }
-
-  @Test
-  public void canCheckFilePathState() throws IOException {
+  void canCheckFilePathState() throws IOException {
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(() -> Require.state("Target", (Path) null).isFile())
         .withMessage("Target must be set");
@@ -304,7 +283,7 @@ public class RequireTest {
   }
 
   @Test
-  public void canCheckDirectoryPathState() throws IOException {
+  void canCheckDirectoryPathState() throws IOException {
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(() -> Require.state("Target", (Path) null).isDirectory())
         .withMessage("Target must be set");
@@ -323,5 +302,4 @@ public class RequireTest {
         .isThrownBy(() -> Require.state("Target", tempFilePath).isDirectory())
         .withMessage("Target must exist: %s", tempFilePath);
   }
-
 }

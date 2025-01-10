@@ -31,6 +31,8 @@ const Button = {
   LEFT: 0,
   MIDDLE: 1,
   RIGHT: 2,
+  BACK: 3,
+  FORWARD: 4,
 }
 
 /**
@@ -159,7 +161,7 @@ class FileDetector {
    * @return {!Promise<string>} A promise for the processed file path.
    * @package
    */
-  handleFile(driver, path) { // eslint-disable-line
+  handleFile(_driver, path) {
     return Promise.resolve(path)
   }
 }
@@ -200,6 +202,7 @@ Action.Type = {
   POINTER_UP: 'pointerUp',
   POINTER_MOVE: 'pointerMove',
   POINTER_CANCEL: 'pointerCancel',
+  SCROLL: 'scroll',
 }
 
 /**
@@ -233,6 +236,7 @@ Device.Type = {
   KEY: 'key',
   NONE: 'none',
   POINTER: 'pointer',
+  WHEEL: 'wheel',
 }
 
 /**
@@ -251,9 +255,7 @@ function checkCodePoint(key) {
 
   key = key.normalize()
   if (Array.from(key).length !== 1) {
-    throw new InvalidArgumentError(
-      `key input is not a single code point: ${key}`
-    )
+    throw new InvalidArgumentError(`key input is not a single code point: ${key}`)
   }
   return key
 }
@@ -328,10 +330,7 @@ class Pointer extends Device {
 
   /** @override */
   toJSON() {
-    return Object.assign(
-      { parameters: { pointerType: this.pointerType_ } },
-      super.toJSON()
-    )
+    return Object.assign({ parameters: { pointerType: this.pointerType_ } }, super.toJSON())
   }
 
   /**
@@ -344,11 +343,43 @@ class Pointer extends Device {
 
   /**
    * @param {!Button=} button The button to press.
+   * @param width
+   * @param height
+   * @param pressure
+   * @param tangentialPressure
+   * @param tiltX
+   * @param tiltY
+   * @param twist
+   * @param altitudeAngle
+   * @param azimuthAngle
    * @return {!Action} An action to press the specified button with this device.
    * @package
    */
-  press(button = Button.LEFT) {
-    return { type: Action.Type.POINTER_DOWN, button }
+  press(
+    button = Button.LEFT,
+    width = 0,
+    height = 0,
+    pressure = 0,
+    tangentialPressure = 0,
+    tiltX = 0,
+    tiltY = 0,
+    twist = 0,
+    altitudeAngle = 0,
+    azimuthAngle = 0,
+  ) {
+    return {
+      type: Action.Type.POINTER_DOWN,
+      button,
+      width,
+      height,
+      pressure,
+      tangentialPressure,
+      tiltX,
+      tiltY,
+      twist,
+      altitudeAngle,
+      azimuthAngle,
+    }
   }
 
   /**
@@ -377,8 +408,37 @@ class Pointer extends Device {
    * @return {!Action} The new action.
    * @package
    */
-  move({ x = 0, y = 0, duration = 100, origin = Origin.VIEWPORT }) {
-    return { type: Action.Type.POINTER_MOVE, origin, duration, x, y }
+  move({
+    x = 0,
+    y = 0,
+    duration = 100,
+    origin = Origin.VIEWPORT,
+    width = 0,
+    height = 0,
+    pressure = 0,
+    tangentialPressure = 0,
+    tiltX = 0,
+    tiltY = 0,
+    twist = 0,
+    altitudeAngle = 0,
+    azimuthAngle = 0,
+  }) {
+    return {
+      type: Action.Type.POINTER_MOVE,
+      origin,
+      duration,
+      x,
+      y,
+      width,
+      height,
+      pressure,
+      tangentialPressure,
+      tiltX,
+      tiltY,
+      twist,
+      altitudeAngle,
+      azimuthAngle,
+    }
   }
 }
 
@@ -390,6 +450,37 @@ Pointer.Type = {
   MOUSE: 'mouse',
   PEN: 'pen',
   TOUCH: 'touch',
+}
+
+class Wheel extends Device {
+  /**
+   * @param {string} id the device ID..
+   */
+  constructor(id) {
+    super(Device.Type.WHEEL, id)
+  }
+
+  /**
+   * Scrolls a page via the coordinates given
+   * @param {number} x starting x coordinate
+   * @param {number} y starting y coordinate
+   * @param {number} deltaX Delta X to scroll to target
+   * @param {number} deltaY Delta Y to scroll to target
+   * @param {WebElement} origin element origin
+   * @param {number} duration duration ratio be the ratio of time delta and duration
+   * @returns {!Action} An action to scroll with this device.
+   */
+  scroll(x, y, deltaX, deltaY, origin, duration) {
+    return {
+      type: Action.Type.SCROLL,
+      duration: duration,
+      x: x,
+      y: y,
+      deltaX: deltaX,
+      deltaY: deltaY,
+      origin: origin,
+    }
+  }
 }
 
 /**
@@ -509,10 +600,14 @@ class Actions {
     /** @private @const */
     this.mouse_ = new Pointer('default mouse', Pointer.Type.MOUSE)
 
+    /** @private @const */
+    this.wheel_ = new Wheel('default wheel')
+
     /** @private @const {!Map<!Device, !Array<!Action>>} */
     this.sequences_ = new Map([
       [this.keyboard_, []],
       [this.mouse_, []],
+      [this.wheel_, []],
     ])
   }
 
@@ -524,6 +619,11 @@ class Actions {
   /** @return {!Pointer} the mouse pointer device handle. */
   mouse() {
     return this.mouse_
+  }
+
+  /** @return {!Wheel} the wheel device handle. */
+  wheel() {
+    return this.wheel_
   }
 
   /**
@@ -698,14 +798,17 @@ class Actions {
    * @return {!Actions} a self reference.
    */
   sendKeys(...keys) {
+    const { WebElement } = require('./webdriver')
+
     const actions = []
+    if (keys.length > 1 && keys[0] instanceof WebElement) {
+      this.click(keys[0])
+      keys.shift()
+    }
     for (const key of keys) {
       if (typeof key === 'string') {
         for (const symbol of key) {
-          actions.push(
-            this.keyboard_.keyDown(symbol),
-            this.keyboard_.keyUp(symbol)
-          )
+          actions.push(this.keyboard_.keyDown(symbol), this.keyboard_.keyUp(symbol))
         }
       } else {
         actions.push(this.keyboard_.keyDown(key), this.keyboard_.keyUp(key))
@@ -736,11 +839,24 @@ class Actions {
   }
 
   /**
+   * scrolls a page via the coordinates given
+   * @param {number} x starting x coordinate
+   * @param {number} y starting y coordinate
+   * @param {number} deltax delta x to scroll to target
+   * @param {number} deltay delta y to scroll to target
+   * @param {number} duration duration ratio be the ratio of time delta and duration
+   * @returns {!Actions} An action to scroll with this device.
+   */
+  scroll(x, y, targetDeltaX, targetDeltaY, origin, duration) {
+    return this.insert(this.wheel_, this.wheel_.scroll(x, y, targetDeltaX, targetDeltaY, origin, duration))
+  }
+
+  /**
    * Inserts an action for moving the mouse `x` and `y` pixels relative to the
    * specified `origin`. The `origin` may be defined as the mouse's
-   * {@linkplain ./input.Origin.POINTER current position}, the
+   * {@linkplain ./input.Origin.POINTER current position}, the top-left corner of the
    * {@linkplain ./input.Origin.VIEWPORT viewport}, or the center of a specific
-   * {@linkplain ./webdriver.WebElement WebElement}.
+   * {@linkplain ./webdriver.WebElement WebElement}. Default is top left corner of the view-port if origin is not specified
    *
    * You may adjust how long the remote end should take, in milliseconds, to
    * perform the move using the `duration` parameter (defaults to 100 ms).
@@ -757,10 +873,7 @@ class Actions {
    * @return {!Actions} a self reference.
    */
   move({ x = 0, y = 0, duration = 100, origin = Origin.VIEWPORT } = {}) {
-    return this.insert(
-      this.mouse_,
-      this.mouse_.move({ x, y, duration, origin })
-    )
+    return this.insert(this.mouse_, this.mouse_.move({ x, y, duration, origin }))
   }
 
   /**
@@ -825,13 +938,8 @@ class Actions {
   dragAndDrop(from, to) {
     // Do not require up top to avoid a cycle that breaks static analysis.
     const { WebElement } = require('./webdriver')
-    if (
-      !(to instanceof WebElement) &&
-      (!to || typeof to.x !== 'number' || typeof to.y !== 'number')
-    ) {
-      throw new InvalidArgumentError(
-        'Invalid drag target; must specify a WebElement or {x, y} offset'
-      )
+    if (!(to instanceof WebElement) && (!to || typeof to.x !== 'number' || typeof to.y !== 'number')) {
+      throw new InvalidArgumentError('Invalid drag target; must specify a WebElement or {x, y} offset')
     }
 
     this.move({ origin: from }).press()
@@ -875,9 +983,19 @@ class Actions {
       return Promise.resolve()
     }
 
-    await this.executor_.execute(
-      new Command(Name.ACTIONS).setParameter('actions', _actions)
-    )
+    await this.executor_.execute(new Command(Name.ACTIONS).setParameter('actions', _actions))
+  }
+
+  getSequences() {
+    const _actions = []
+    this.sequences_.forEach((actions, device) => {
+      if (!isIdle(actions)) {
+        actions = actions.concat()
+        _actions.push(Object.assign({ actions }, device.toJSON()))
+      }
+    })
+
+    return _actions
   }
 }
 
@@ -886,10 +1004,7 @@ class Actions {
  * @return {boolean}
  */
 function isIdle(actions) {
-  return (
-    actions.length === 0 ||
-    actions.every((a) => a.type === Action.Type.PAUSE && !a.duration)
-  )
+  return actions.length === 0 || actions.every((a) => a.type === Action.Type.PAUSE && !a.duration)
 }
 
 /**

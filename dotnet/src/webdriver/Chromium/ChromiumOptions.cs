@@ -1,27 +1,26 @@
-// <copyright file="ChromiumOptions.cs" company="WebDriver Committers">
+// <copyright file="ChromiumOptions.cs" company="Selenium Committers">
 // Licensed to the Software Freedom Conservancy (SFC) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The SFC licenses this file
-// to you under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
-using OpenQA.Selenium.Remote;
 
 namespace OpenQA.Selenium.Chromium
 {
@@ -105,7 +104,7 @@ namespace OpenQA.Selenium.Chromium
         /// <summary>
         /// Gets or sets the location of the Chromium browser's binary executable file.
         /// </summary>
-        public string BinaryLocation
+        public override string BinaryLocation
         {
             get { return this.binaryLocation; }
             set { this.binaryLocation = value; }
@@ -183,17 +182,6 @@ namespace OpenQA.Selenium.Chromium
         {
             get { return this.androidOptions; }
             set { this.androidOptions = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the <see cref="ChromiumDriver"/> instance
-        /// should use the legacy OSS protocol dialect or a dialect compliant with the W3C
-        /// WebDriver Specification.
-        /// </summary>
-        public bool UseSpecCompliantProtocol
-        {
-            get { return this.useSpecCompliantProtocol; }
-            set { this.useSpecCompliantProtocol = value; }
         }
 
         /// <summary>
@@ -504,58 +492,6 @@ namespace OpenQA.Selenium.Chromium
         {
             this.ValidateCapabilityName(optionName);
             this.additionalChromeOptions[optionName] = optionValue;
-        }
-
-        /// <summary>
-        /// Provides a means to add additional capabilities not yet added as type safe options
-        /// for the Chromium driver.
-        /// </summary>
-        /// <param name="capabilityName">The name of the capability to add.</param>
-        /// <param name="capabilityValue">The value of the capability to add.</param>
-        /// <exception cref="ArgumentException">
-        /// thrown when attempting to add a capability for which there is already a type safe option, or
-        /// when <paramref name="capabilityName"/> is <see langword="null"/> or the empty string.
-        /// </exception>
-        /// <remarks>Calling <see cref="AddAdditionalCapability(string, object)"/>
-        /// where <paramref name="capabilityName"/> has already been added will overwrite the
-        /// existing value with the new value in <paramref name="capabilityValue"/>.
-        /// Also, by default, calling this method adds capabilities to the options object passed to
-        /// chromedriver.exe.</remarks>
-        [Obsolete("Use the temporary AddAdditionalOption method or the AddAdditionalChromeOption method for adding additional options")]
-        public override void AddAdditionalCapability(string capabilityName, object capabilityValue)
-        {
-            // Add the capability to the chromeOptions object by default. This is to handle
-            // the 80% case where the chromedriver team adds a new option in chromedriver.exe
-            // and the bindings have not yet had a type safe option added.
-            this.AddAdditionalCapability(capabilityName, capabilityValue, false);
-        }
-
-        /// <summary>
-        /// Provides a means to add additional capabilities not yet added as type safe options
-        /// for the Chromium driver.
-        /// </summary>
-        /// <param name="capabilityName">The name of the capability to add.</param>
-        /// <param name="capabilityValue">The value of the capability to add.</param>
-        /// <param name="isGlobalCapability">Indicates whether the capability is to be set as a global
-        /// capability for the driver instead of a Chromium-specific option.</param>
-        /// <exception cref="ArgumentException">
-        /// thrown when attempting to add a capability for which there is already a type safe option, or
-        /// when <paramref name="capabilityName"/> is <see langword="null"/> or the empty string.
-        /// </exception>
-        /// <remarks>Calling <see cref="AddAdditionalCapability(string, object, bool)"/>
-        /// where <paramref name="capabilityName"/> has already been added will overwrite the
-        /// existing value with the new value in <paramref name="capabilityValue"/></remarks>
-        [Obsolete("Use the temporary AddAdditionalOption method or the AddAdditionalChromeOption method for adding additional options")]
-        public void AddAdditionalCapability(string capabilityName, object capabilityValue, bool isGlobalCapability)
-        {
-            if (isGlobalCapability)
-            {
-                this.AddAdditionalOption(capabilityName, capabilityValue);
-            }
-            else
-            {
-                this.AddAdditionalChromiumOption(capabilityName, capabilityValue);
-            }
         }
 
         /// <summary>

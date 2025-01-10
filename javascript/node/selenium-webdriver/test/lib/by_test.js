@@ -17,8 +17,8 @@
 
 'use strict'
 
-const assert = require('assert')
-const by = require('../../lib/by')
+const assert = require('node:assert')
+const by = require('selenium-webdriver/lib/by')
 
 describe('by', function () {
   describe('By', function () {
@@ -93,10 +93,8 @@ describe('by', function () {
 
       let expected = {
         relative: {
-          root: { 'css selector': 'p' },
-          filters: [
-            { kind: 'above', args: [{ 'css selector': '*[name="foobar"]' }] },
-          ],
+          root: { 'tag name': 'p' },
+          filters: [{ kind: 'above', args: [{ 'css selector': '*[name="foobar"]' }] }],
         },
       }
       assert.deepStrictEqual(relative.marshall(), expected)
@@ -111,7 +109,7 @@ describe('by', function () {
     })
 
     it('accepts custom locator functions', function () {
-      let original = function () { }
+      let original = function () {}
       let locator = by.checkedLocator(original)
       assert.strictEqual(locator, original)
     })
@@ -163,7 +161,7 @@ describe('by', function () {
 
     it('accepts tagName', function () {
       let locator = by.checkedLocator({ tagName: 'div' })
-      assert.strictEqual('css selector', locator.using)
+      assert.strictEqual('tag name', locator.using)
       assert.strictEqual('div', locator.value)
     })
 

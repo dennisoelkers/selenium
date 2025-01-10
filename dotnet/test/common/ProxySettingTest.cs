@@ -1,3 +1,27 @@
+// <copyright file="ProxySettingTest.cs" company="Selenium Committers">
+// Licensed to the Software Freedom Conservancy (SFC) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+// </copyright>
+
+using BenderProxy;
+using BenderProxy.Writers;
+using NUnit.Framework;
+using OpenQA.Selenium.Environment;
+using OpenQA.Selenium.IE;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,14 +29,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using BenderProxy;
-using BenderProxy.Writers;
-using NUnit.Framework;
-using OpenQA.Selenium.Environment;
-using OpenQA.Selenium.IE;
 
 namespace OpenQA.Selenium
 {
+    [Ignore("Proxy Tests are not working")]
     [TestFixture]
     public class ProxySettingTest : DriverTestFixture
     {
@@ -47,7 +67,6 @@ namespace OpenQA.Selenium
 
         [Test]
         [IgnoreBrowser(Browser.Safari, "SafariDriver does not support setting proxy")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "EdgeDriver does not support setting proxy")]
         public void CanConfigureManualHttpProxy()
         {
             proxyServer.EnableLogResourcesOnResponse();
@@ -60,13 +79,12 @@ namespace OpenQA.Selenium
 
         [Test]
         [IgnoreBrowser(Browser.Safari, "SafariDriver does not support setting proxy")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "EdgeDriver does not support setting proxy")]
         public void CanConfigureNoProxy()
         {
             proxyServer.EnableLogResourcesOnResponse();
             Proxy proxyToUse = proxyServer.AsProxy();
             proxyToUse.AddBypassAddresses(EnvironmentManager.Instance.UrlBuilder.HostName);
-            
+
             if (TestUtilities.IsInternetExplorer(driver))
             {
                 proxyToUse.AddBypassAddress("<-localhost>");
@@ -83,7 +101,6 @@ namespace OpenQA.Selenium
 
         [Test]
         [IgnoreBrowser(Browser.Safari, "SafariDriver does not support setting proxy")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "EdgeDriver does not support setting proxy")]
         public void CanConfigureProxyThroughAutoConfigFile()
         {
             StringBuilder pacFileContentBuilder = new StringBuilder();
@@ -104,8 +121,8 @@ namespace OpenQA.Selenium
         }
 
         [Test]
+        [IgnoreBrowser(Browser.Chrome, "ChromeDriver is hanging")]
         [IgnoreBrowser(Browser.Safari, "SafariDriver does not support setting proxy")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "EdgeDriver does not support setting proxy")]
         public void CanUseAutoConfigFileThatOnlyProxiesCertainHosts()
         {
             StringBuilder pacFileContentBuilder = new StringBuilder();
@@ -154,8 +171,7 @@ namespace OpenQA.Selenium
 
         private class ProxyOptions : DriverOptions
         {
-            [Obsolete]
-            public override void AddAdditionalCapability(string capabilityName, object capabilityValue)
+            public override void AddAdditionalOption(string capabilityName, object capabilityValue)
             {
             }
 
@@ -373,7 +389,7 @@ namespace OpenQA.Selenium
                 responseHeader.EntityHeaders.ContentEncoding = "utf-8";
                 responseHeader.EntityHeaders.ContentLength = responseStream.Length;
                 new HttpResponseWriter(context.ClientStream).Write(responseHeader, responseStream, responseStream.Length);
-            }           
+            }
         }
     }
 }

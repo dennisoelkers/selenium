@@ -1,22 +1,22 @@
-// <copyright file="DriverCommand.cs" company="WebDriver Committers">
+// <copyright file="DriverCommand.cs" company="Selenium Committers">
 // Licensed to the Software Freedom Conservancy (SFC) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The SFC licenses this file
-// to you under the Apache License = string.Empty; Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing = string.Empty; software
-// distributed under the License is distributed on an "AS IS" BASIS = string.Empty;
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND = string.Empty; either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 
 namespace OpenQA.Selenium
@@ -120,11 +120,6 @@ namespace OpenQA.Selenium
         /// Represents FindShadosChildElements command
         /// </summary>
         public static readonly string FindShadowChildElements = "findShadowChildElements";
-
-        /// <summary>
-        /// Describes an element
-        /// </summary>
-        //public static readonly string DescribeElement = "describeElement";
 
         /// <summary>
         /// Represents ClearElement command
@@ -361,294 +356,61 @@ namespace OpenQA.Selenium
         /// </summary>
         public static readonly string GetLog = "getLog";
 
+        // Virtual Authenticator API
+        // http://w3c.github.io/webauthn#sctn-automation
         /// <summary>
-        /// Represents the Define Driver Mapping command
+        /// Represents the AddVirtualAuthenticator command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string DefineDriverMapping = "defineDriverMapping";
+        public static readonly string AddVirtualAuthenticator = "addVirtualAuthenticator";
 
         /// <summary>
-        /// Represents the Get Session List command
+        /// Represents the RemoveVirtualAuthenticator command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string GetSessionList = "getSessionList";
+        public static readonly string RemoveVirtualAuthenticator = "removeVirtualAuthenticator";
 
         /// <summary>
-        /// Represents the Get Session Capabilities command
+        /// Represents the AddCredential command
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Actual capabilities are returned by the new session command.")]
-        public static readonly string GetSessionCapabilities = "getSessionCapabilities";
+        public static readonly string AddCredential = "addCredential";
 
         /// <summary>
-        /// Represents SubmitElement command
+        /// Represents the GetCredentials command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string SubmitElement = "submitElement";
+        public static readonly string GetCredentials = "getCredentials";
 
         /// <summary>
-        /// Represents GetElementLocation command
+        /// Represents the RemoveCredential command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the get element rect command instead.")]
-        public static readonly string GetElementLocation = "getElementLocation";
+        public static readonly string RemoveCredential = "removeCredential";
 
         /// <summary>
-        /// Represents GetElementLocationOnceScrolledIntoView command
+        /// Represents the RemoveAllCredentials command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the get element rect command instead.")]
-        public static readonly string GetElementLocationOnceScrolledIntoView = "getElementLocationOnceScrolledIntoView";
+        public static readonly string RemoveAllCredentials = "removeAllCredentials";
 
         /// <summary>
-        /// Represents GetElementSize command
+        /// Represents the SetUserVerified command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the get element rect command instead.")]
-        public static readonly string GetElementSize = "getElementSize";
+        public static readonly string SetUserVerified = "setUserVerified";
 
         /// <summary>
-        /// Represents GetWindowSize command
+        /// Represents the GetDownloadableFiles command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the get window rect command instead.")]
-        public static readonly string GetWindowSize = "getWindowSize";
+        public static readonly string GetDownloadableFiles = "getDownloadableFiles";
 
         /// <summary>
-        /// Represents SetWindowSize command
+        /// Represents the DownloadFile command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the set window rect command instead.")]
-        public static readonly string SetWindowSize = "setWindowSize";
+        public static readonly string DownloadFile = "downloadFile";
 
         /// <summary>
-        /// Represents GetWindowPosition command
+        /// Represents the DeleteDownloadableFiles command.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the get window rect command instead.")]
-        public static readonly string GetWindowPosition = "getWindowPosition";
+        public static readonly string DeleteDownloadableFiles = "deleteDownloadableFiles";
 
         /// <summary>
-        /// Represents SetWindowPosition command
+        /// Lists the set of known commands valid for the Selenium library.
         /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the set window rect command instead.")]
-        public static readonly string SetWindowPosition = "setWindowPosition";
-
-        /// <summary>
-        /// Represents the ImplicitlyWait command
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the set timeouts command instead.")]
-        public static readonly string ImplicitlyWait = "implicitlyWait";
-
-        /// <summary>
-        /// Represents the SetAsyncScriptTimeout command
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the set timeouts command instead.")]
-        public static readonly string SetAsyncScriptTimeout = "setScriptTimeout";
-
-        /// <summary>
-        /// Represents TapElement command
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TapElement = "tapElement";
-
-        /// <summary>
-        /// Represents the MouseClick command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string MouseClick = "mouseClick";
-
-        /// <summary>
-        /// Represents the MouseDoubleClick command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string MouseDoubleClick = "mouseDoubleClick";
-
-        /// <summary>
-        /// Represents the MouseDown command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string MouseDown = "mouseDown";
-
-        /// <summary>
-        /// Represents the MouseUp command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string MouseUp = "mouseUp";
-
-        /// <summary>
-        /// Represents the MouseMoveTo command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string MouseMoveTo = "mouseMoveTo";
-
-        /// <summary>
-        /// Represents the SendKeysToActiveElement command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string SendKeysToActiveElement = "sendKeysToActiveElement";
-
-        /// <summary>
-        /// Represents the TouchSingleTap command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchSingleTap = "touchSingleTap";
-
-        /// <summary>
-        /// Represents the TouchPress command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchPress = "touchDown";
-
-        /// <summary>
-        /// Represents the TouchRelease command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchRelease = "touchUp";
-
-        /// <summary>
-        /// Represents the TouchMove command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchMove = "touchMove";
-
-        /// <summary>
-        /// Represents the TouchScroll command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchScroll = "touchScroll";
-
-        /// <summary>
-        /// Represents the TouchDoubleTap command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchDoubleTap = "touchDoubleTap";
-
-        /// <summary>
-        /// Represents the TouchLongPress command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchLongPress = "touchLongPress";
-
-        /// <summary>
-        /// Represents the TouchFlick command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use the actions command to define user interactions.")]
-        public static readonly string TouchFlick = "touchFlick";
-
-        /// <summary>
-        /// Represents the Authenticate command
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string SetAlertCredentials = "setAlertCredentials";
-
-        /// <summary>
-        /// Represents GetOrientation command
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string GetOrientation = "getOrientation";
-
-        /// <summary>
-        /// Represents SetOrientation command
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string SetOrientation = "setOrientation";
-
-        /// <summary>
-        /// Represents the GetLocation command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string GetLocation = "getLocation";
-
-        /// <summary>
-        /// Represents the SetLocation command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification.")]
-        public static readonly string SetLocation = "setLocation";
-
-        /// <summary>
-        /// Represents the GetAppCache command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetAppCache = "getAppCache";
-
-        /// <summary>
-        /// Represents the application cache GetStatus command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetAppCacheStatus = "getStatus";
-
-        /// <summary>
-        /// Represents the ClearAppCache command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string ClearAppCache = "clearAppCache";
-
-        /// <summary>
-        /// Represents the GetLocalStorageItem command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetLocalStorageItem = "getLocalStorageItem";
-
-        /// <summary>
-        /// Represents the GetLocalStorageKeys command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetLocalStorageKeys = "getLocalStorageKeys";
-
-        /// <summary>
-        /// Represents the SetLocalStorageItem command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string SetLocalStorageItem = "setLocalStorageItem";
-
-        /// <summary>
-        /// Represents the RemoveLocalStorageItem command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string RemoveLocalStorageItem = "removeLocalStorageItem";
-
-        /// <summary>
-        /// Represents the ClearLocalStorage command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string ClearLocalStorage = "clearLocalStorage";
-
-        /// <summary>
-        /// Represents the GetLocalStorageSize command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetLocalStorageSize = "getLocalStorageSize";
-
-        /// <summary>
-        /// Represents the GetSessionStorageItem command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetSessionStorageItem = "getSessionStorageItem";
-
-        /// <summary>
-        /// Represents the GetSessionStorageKeys command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetSessionStorageKeys = "getSessionStorageKeys";
-
-        /// <summary>
-        /// Represents the SetSessionStorageItem command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string SetSessionStorageItem = "setSessionStorageItem";
-
-        /// <summary>
-        /// Represents the RemoveSessionStorageItem command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string RemoveSessionStorageItem = "removeSessionStorageItem";
-
-        /// <summary>
-        /// Represents the ClearSessionStorage command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string ClearSessionStorage = "clearSessionStorage";
-
-        /// <summary>
-        /// Represents the GetSessionStorageSize command.
-        /// </summary>
-        [Obsolete("Command not defined by W3C WebDriver Specification. Use JavaScript execution to manage HTML5 storage and cache features.")]
-        public static readonly string GetSessionStorageSize = "getSessionStorageSize";
-
         public static readonly IList<string> KnownCommands = new List<string>()
         {
             Status,
@@ -714,7 +476,17 @@ namespace OpenQA.Selenium
             IsElementDisplayed,
             UploadFile,
             GetLog,
-            GetAvailableLogTypes
+            GetAvailableLogTypes,
+            AddVirtualAuthenticator,
+            RemoveVirtualAuthenticator,
+            AddCredential,
+            GetCredentials,
+            RemoveCredential,
+            RemoveAllCredentials,
+            SetUserVerified,
+            GetDownloadableFiles,
+            DownloadFile,
+            DeleteDownloadableFiles
         }.AsReadOnly();
     }
 }

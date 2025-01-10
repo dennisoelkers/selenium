@@ -24,7 +24,7 @@ module Selenium
   module WebDriver
     module Support
       class Guards
-        GUARD_TYPES = %i[except only exclude exclusive].freeze
+        GUARD_TYPES = %i[except only exclude exclusive flaky].freeze
 
         attr_reader :messages
         attr_accessor :bug_tracker
@@ -37,8 +37,8 @@ module Selenium
           @messages = {}
         end
 
-        def add_condition(name, condition = nil, &blk)
-          @guard_conditions << GuardCondition.new(name, condition, &blk)
+        def add_condition(name, condition = nil, &)
+          @guard_conditions << GuardCondition.new(name, condition, &)
         end
 
         def add_message(name, message)
@@ -48,7 +48,7 @@ module Selenium
         def disposition
           if !skipping_guard.nil?
             [:skip, skipping_guard.message]
-          elsif !pending_guard.nil? && ENV['SKIP_PENDING']
+          elsif !pending_guard.nil? && ENV.fetch('SKIP_PENDING', nil)
             [:skip, pending_guard.message]
           elsif !pending_guard.nil?
             [:pending, pending_guard.message]

@@ -57,6 +57,13 @@ module Selenium
         #
 
         def on_log_event(kind, &block)
+          if browser == :firefox
+            WebDriver.logger.deprecate(
+              'Driver#on_log_event on Firefox',
+              'the script.add_console_message_handler or the script.add_javascript_error_handler methods',
+              id: :on_log_event
+            )
+          end
           raise Error::WebDriverError, "Don't know how to handle #{kind} events" unless KINDS.include?(kind)
 
           enabled = log_listeners[kind].any?
@@ -64,7 +71,7 @@ module Selenium
           return if enabled
 
           devtools.runtime.enable
-          __send__("log_#{kind}_events")
+          __send__(:"log_#{kind}_events")
         end
 
         private
@@ -114,7 +121,7 @@ module Selenium
           execute_script(mutation_listener)
           devtools.page.add_script_to_evaluate_on_new_document(source: mutation_listener)
 
-          devtools.runtime.on(:binding_called, &method(:log_mutation_event))
+          devtools.runtime.on(:binding_called) { |event| log_mutation_event(event) }
         end
 
         def log_mutation_event(params)
@@ -137,7 +144,6 @@ module Selenium
         def mutation_listener
           @mutation_listener ||= read_atom(:mutationListener)
         end
-
       end # HasLogEvents
     end # DriverExtensions
   end # WebDriver

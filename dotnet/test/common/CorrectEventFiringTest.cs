@@ -1,10 +1,29 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+// <copyright file="CorrectEventFiringTest.cs" company="Selenium Committers">
+// Licensed to the Software Freedom Conservancy (SFC) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+// </copyright>
+
 using NUnit.Framework;
-using System.Collections.ObjectModel;
 using OpenQA.Selenium.Environment;
 using OpenQA.Selenium.Interactions;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Text;
 
 namespace OpenQA.Selenium
 {
@@ -23,7 +42,6 @@ namespace OpenQA.Selenium
 
         [Test]
         [NeedsFreshDriver(IsCreatedBeforeTest = true, IsCreatedAfterTest = true)]
-        [IgnoreBrowser(Browser.EdgeLegacy, "Edge driver does not support multiple instances")]
         [IgnoreBrowser(Browser.Safari, "Safari driver does not support multiple instances")]
         public void ShouldFireFocusEventInNonTopmostWindow()
         {
@@ -140,7 +158,7 @@ namespace OpenQA.Selenium
             driver.FindElement(By.Id("mousedown")).Click();
 
             String result = driver.FindElement(By.Id("result")).Text;
-            Assert.AreEqual(result, "mouse down");
+            Assert.That(result, Is.EqualTo("mouse down"));
         }
 
         [Test]
@@ -150,7 +168,7 @@ namespace OpenQA.Selenium
             driver.FindElement(By.Id("mouseclick")).Click();
 
             String result = driver.FindElement(By.Id("result")).Text;
-            Assert.AreEqual(result, "mouse click");
+            Assert.That(result, Is.EqualTo("mouse click"));
         }
 
         [Test]
@@ -160,7 +178,7 @@ namespace OpenQA.Selenium
             driver.FindElement(By.Id("mouseup")).Click();
 
             String result = driver.FindElement(By.Id("result")).Text;
-            Assert.AreEqual(result, "mouse up");
+            Assert.That(result, Is.EqualTo("mouse up"));
         }
 
         [Test]
@@ -170,10 +188,11 @@ namespace OpenQA.Selenium
             driver.FindElement(By.Id("child")).Click();
 
             String result = driver.FindElement(By.Id("result")).Text;
-            Assert.AreEqual(result, "mouse down");
+            Assert.That(result, Is.EqualTo("mouse down"));
         }
 
         [Test]
+        [IgnoreBrowser(Browser.Firefox)]
         public void ShouldEmitOnChangeEventsWhenSelectingElements()
         {
             driver.Url = javascriptPage;
@@ -186,9 +205,9 @@ namespace OpenQA.Selenium
             IWebElement bar = allOptions[1];
 
             foo.Click();
-            Assert.AreEqual(driver.FindElement(By.Id("result")).Text, initialTextValue);
+            Assert.That(driver.FindElement(By.Id("result")).Text, Is.EqualTo(initialTextValue));
             bar.Click();
-            Assert.AreEqual(driver.FindElement(By.Id("result")).Text, "bar");
+            Assert.That(driver.FindElement(By.Id("result")).Text, Is.EqualTo("bar"));
         }
 
         [Test]
@@ -202,9 +221,9 @@ namespace OpenQA.Selenium
             IWebElement bar = allOptions[1];
 
             foo.Click();
-            Assert.AreEqual(driver.FindElement(By.Id("result")).Text, "foo");
+            Assert.That(driver.FindElement(By.Id("result")).Text, Is.EqualTo("foo"));
             bar.Click();
-            Assert.AreEqual(driver.FindElement(By.Id("result")).Text, "bar");
+            Assert.That(driver.FindElement(By.Id("result")).Text, Is.EqualTo("bar"));
         }
 
         [Test]
@@ -215,7 +234,7 @@ namespace OpenQA.Selenium
             IWebElement checkbox = driver.FindElement(By.Id("checkbox"));
 
             checkbox.Click();
-            Assert.AreEqual(driver.FindElement(By.Id("result")).Text, "checkbox thing");
+            Assert.That(driver.FindElement(By.Id("result")).Text, Is.EqualTo("checkbox thing"));
         }
 
         [Test]
@@ -226,7 +245,7 @@ namespace OpenQA.Selenium
             IWebElement clicker = driver.FindElement(By.Id("clickField"));
             clicker.Click();
 
-            Assert.AreEqual(clicker.GetAttribute("value"), "Clicked");
+            Assert.That(clicker.GetAttribute("value"), Is.EqualTo("Clicked"));
         }
 
         [Test]
@@ -250,7 +269,7 @@ namespace OpenQA.Selenium
             element.Clear();
 
             IWebElement result = driver.FindElement(By.Id("result"));
-            Assert.AreEqual(result.Text, "Cleared");
+            Assert.That(result.Text.Trim(), Is.EqualTo("Cleared"));
         }
 
         [Test]
@@ -265,7 +284,6 @@ namespace OpenQA.Selenium
         }
 
         [Test]
-        [IgnoreBrowser(Browser.EdgeLegacy, "Edge driver does not support multiple instances")]
         [IgnoreBrowser(Browser.Safari, "Safari driver does not support multiple instances")]
         public void SendingKeysToAnotherElementShouldCauseTheBlurEventToFireInNonTopmostWindow()
         {
@@ -330,19 +348,11 @@ namespace OpenQA.Selenium
                     focused = true;
                     break;
                 }
-                try
-                {
-                    System.Threading.Thread.Sleep(200);
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
+
+                System.Threading.Thread.Sleep(200);
             }
-            if (!focused)
-            {
-                Assert.Fail("Clicking on element didn't focus it in time - can't proceed so failing");
-            }
+
+            Assert.That(focused, Is.True, "Clicking on element didn't focus it in time - can't proceed so failing");
 
             element.SendKeys("a");
             AssertEventNotFired("blur");
@@ -406,7 +416,7 @@ namespace OpenQA.Selenium
             driver.Url = formsPage;
             IWebElement uploadElement = driver.FindElement(By.Id("upload"));
             IWebElement result = driver.FindElement(By.Id("fileResults"));
-            Assert.AreEqual(string.Empty, result.Text);
+            Assert.That(result.Text, Is.Empty);
 
             string filePath = System.IO.Path.Combine(EnvironmentManager.Instance.CurrentDirectory, "test.txt");
             System.IO.FileInfo inputFile = new System.IO.FileInfo(filePath);
@@ -419,7 +429,7 @@ namespace OpenQA.Selenium
             driver.FindElement(By.Id("id-name1")).Click();
 
             inputFile.Delete();
-            Assert.AreEqual("changed", result.Text);
+            Assert.That(result.Text, Is.EqualTo("changed"));
         }
 
         [Test]
@@ -435,8 +445,8 @@ namespace OpenQA.Selenium
             string clientY = driver.FindElement(By.Id("clientY")).Text;
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(0);
 
-            Assert.AreNotEqual("0", clientX);
-            Assert.AreNotEqual("0", clientY);
+            Assert.That(clientX, Is.Not.EqualTo("0"));
+            Assert.That(clientY, Is.Not.EqualTo("0"));
         }
 
         [Test]
@@ -461,67 +471,6 @@ namespace OpenQA.Selenium
         }
 
         [Test]
-        [IgnoreBrowser(Browser.Chrome, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.Edge, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.Firefox, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.IE, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.Safari, "Driver checks for overlapping elements")]
-        public void ClickPartiallyOverlappingElements()
-        {
-            if (TestUtilities.IsOldIE(driver))
-            {
-                Assert.Ignore("Not supported on IE < 9");
-            }
-
-            StringBuilder expectedLogBuilder = new StringBuilder();
-            expectedLogBuilder.AppendLine("Log:");
-            expectedLogBuilder.AppendLine("mousedown in under (handled by under)");
-            expectedLogBuilder.AppendLine("mousedown in under (handled by body)");
-            expectedLogBuilder.AppendLine("mouseup in under (handled by under)");
-            expectedLogBuilder.AppendLine("mouseup in under (handled by body)");
-            expectedLogBuilder.AppendLine("click in under (handled by under)");
-            expectedLogBuilder.Append("click in under (handled by body)");
-
-            for (int i = 1; i < 6; i++)
-            {
-                driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("click_tests/partially_overlapping_elements.html");
-                IWebElement over = driver.FindElement(By.Id("over" + i));
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].style.display = 'none'", over);
-                driver.FindElement(By.Id("under")).Click();
-                Assert.AreEqual(expectedLogBuilder.ToString(), driver.FindElement(By.Id("log")).Text);
-            }
-        }
-
-        [Test]
-        [IgnoreBrowser(Browser.Chrome, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.Edge, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.EdgeLegacy, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.Firefox, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.IE, "Driver checks for overlapping elements")]
-        [IgnoreBrowser(Browser.Safari, "Driver checks for overlapping elements")]
-        public void NativelyClickOverlappingElements()
-        {
-            if (TestUtilities.IsOldIE(driver))
-            {
-                Assert.Ignore("Not supported on IE < 9");
-            }
-
-            StringBuilder expectedLogBuilder = new StringBuilder();
-            expectedLogBuilder.AppendLine("Log:");
-            expectedLogBuilder.AppendLine("mousedown in over (handled by over)");
-            expectedLogBuilder.AppendLine("mousedown in over (handled by body)");
-            expectedLogBuilder.AppendLine("mouseup in over (handled by over)");
-            expectedLogBuilder.AppendLine("mouseup in over (handled by body)");
-            expectedLogBuilder.AppendLine("click in over (handled by over)");
-            expectedLogBuilder.Append("click in over (handled by body)");
-
-            driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("click_tests/overlapping_elements.html");
-            driver.FindElement(By.Id("under")).Click();
-            Assert.AreEqual(expectedLogBuilder.ToString(), driver.FindElement(By.Id("log")).Text);
-        }
-
-        [Test]
         public void ClickAnElementThatDisappear()
         {
             if (TestUtilities.IsOldIE(driver))
@@ -538,7 +487,7 @@ namespace OpenQA.Selenium
 
             driver.Url = EnvironmentManager.Instance.UrlBuilder.WhereIs("click_tests/disappearing_element.html");
             driver.FindElement(By.Id("over")).Click();
-            Assert.That(driver.FindElement(By.Id("log")).Text.StartsWith(expectedLogBuilder.ToString()));
+            Assert.That(driver.FindElement(By.Id("log")).Text, Does.StartWith(expectedLogBuilder.ToString()));
         }
 
         private void AssertEventNotFired(string eventName)

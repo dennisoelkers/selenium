@@ -21,7 +21,6 @@ module Selenium
   module WebDriver
     module DriverExtensions
       module HasPinnedScripts
-
         #
         # Returns the list of all pinned scripts.
         #
@@ -62,7 +61,7 @@ module Selenium
         #
         # Unpins script making it undefined for the subsequent calls.
         #
-        # @param [DevTools::PinnedScript]
+        # @param [DevTools::PinnedScript] script
         #
 
         def unpin_script(script)
@@ -70,7 +69,6 @@ module Selenium
           devtools.page.remove_script_to_evaluate_on_new_document(identifier: script.devtools_identifier)
           pinned_scripts.delete(script)
         end
-
       end # HasPinnedScripts
     end # DriverExtensions
   end # WebDriver

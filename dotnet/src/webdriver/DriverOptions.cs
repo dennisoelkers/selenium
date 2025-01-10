@@ -1,22 +1,22 @@
-// <copyright file="DriverOptions.cs" company="WebDriver Committers">
+// <copyright file="DriverOptions.cs" company="Selenium Committers">
 // Licensed to the Software Freedom Conservancy (SFC) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The SFC licenses this file
-// to you under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 // </copyright>
 
-using Newtonsoft.Json;
 using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Remote;
 using System;
@@ -89,6 +89,24 @@ namespace OpenQA.Selenium
         None
     }
 
+    internal class Timeout
+    {
+        public TimeSpan? Script { get; set; }
+        public TimeSpan? PageLoad { get; set; }
+        public TimeSpan? ImplicitWait { get; set; }
+
+        public Dictionary<string, object> ToCapabilities()
+        {
+            var timeoutCapabilities = new Dictionary<string, object>();
+
+            if (Script.HasValue) timeoutCapabilities.Add("script", Script.Value.TotalMilliseconds);
+            if (PageLoad.HasValue) timeoutCapabilities.Add("pageLoad", PageLoad.Value.TotalMilliseconds);
+            if (ImplicitWait.HasValue) timeoutCapabilities.Add("implicit", ImplicitWait.Value.TotalMilliseconds);
+
+            return timeoutCapabilities;
+        }
+    }
+
     /// <summary>
     /// Base class for managing options specific to a browser driver.
     /// </summary>
@@ -101,6 +119,10 @@ namespace OpenQA.Selenium
         private bool? acceptInsecureCertificates;
         private bool? useWebSocketUrl;
         private bool useStrictFileInteractability;
+        private bool? enableDownloads;
+        private TimeSpan? scriptTimeout;
+        private TimeSpan? pageLoadTimeout;
+        private TimeSpan? implicitWaitTimeout;
         private UnhandledPromptBehavior unhandledPromptBehavior = UnhandledPromptBehavior.Default;
         private PageLoadStrategy pageLoadStrategy = PageLoadStrategy.Default;
         private Dictionary<string, object> additionalCapabilities = new Dictionary<string, object>();
@@ -120,6 +142,7 @@ namespace OpenQA.Selenium
             this.AddKnownCapabilityName(CapabilityType.PageLoadStrategy, "PageLoadStrategy property");
             this.AddKnownCapabilityName(CapabilityType.UseStrictFileInteractability, "UseStrictFileInteractability property");
             this.AddKnownCapabilityName(CapabilityType.WebSocketUrl, "UseWebSocketUrl property");
+            this.AddKnownCapabilityName(CapabilityType.EnableDownloads, "EnableDownloads property");
         }
 
         /// <summary>
@@ -209,6 +232,71 @@ namespace OpenQA.Selenium
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether files may be downloaded from remote node.
+        /// </summary>
+        public bool? EnableDownloads
+        {
+            get { return this.enableDownloads; }
+            set { this.enableDownloads = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the asynchronous script timeout, which is the amount
+        /// of time the driver should wait when executing JavaScript asynchronously.
+        /// This timeout only affects the <see cref="IJavaScriptExecutor.ExecuteAsyncScript(string, object[])"/>
+        /// method.
+        /// </summary>
+        public TimeSpan? ScriptTimeout
+        {
+            get { return this.scriptTimeout; }
+            set { this.scriptTimeout = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the page load timeout, which is the amount of time the driver
+        /// should wait for a page to load when setting the <see cref="IWebDriver.Url"/>
+        /// property.
+        /// </summary>
+        public TimeSpan? PageLoadTimeout
+        {
+            get { return this.pageLoadTimeout; }
+            set { this.pageLoadTimeout = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the implicit wait timeout, which is the  amount of time the
+        /// driver should wait when searching for an element if it is not immediately
+        /// present.
+        /// </summary>
+        /// <remarks>
+        /// When searching for a single element, the driver should poll the page
+        /// until the element has been found, or this timeout expires before throwing
+        /// a <see cref="NoSuchElementException"/>. When searching for multiple elements,
+        /// the driver should poll the page until at least one element has been found
+        /// or this timeout has expired.
+        /// <para>
+        /// Increasing the implicit wait timeout should be used judiciously as it
+        /// will have an adverse effect on test run time, especially when used with
+        /// slower location strategies like XPath.
+        /// </para>
+        /// </remarks>
+        public TimeSpan? ImplicitWaitTimeout
+        {
+            get { return this.implicitWaitTimeout; }
+            set { this.implicitWaitTimeout = value; }
+        }
+
+        /// <summary>
+        /// Set or Get the location of the browser
+        /// Override in subclass
+        /// </summary>
+        public virtual string BinaryLocation
+        {
+            get { return null; }
+            set { throw new NotImplementedException(); }
+        }
+
+        /// <summary>
         /// Provides a means to add additional capabilities not yet added as type safe options
         /// for the specific browser driver.
         /// </summary>
@@ -227,23 +315,6 @@ namespace OpenQA.Selenium
             this.ValidateCapabilityName(optionName);
             this.additionalCapabilities[optionName] = optionValue;
         }
-
-        /// <summary>
-        /// Provides a means to add additional capabilities not yet added as type safe options
-        /// for the specific browser driver.
-        /// </summary>
-        /// <param name="capabilityName">The name of the capability to add.</param>
-        /// <param name="capabilityValue">The value of the capability to add.</param>
-        /// <exception cref="ArgumentException">
-        /// thrown when attempting to add a capability for which there is already a type safe option, or
-        /// when <paramref name="capabilityName"/> is <see langword="null"/> or the empty string.
-        /// </exception>
-        /// <remarks>Calling <see cref="AddAdditionalCapability(string, object)"/>
-        /// where <paramref name="capabilityName"/> has already been added will overwrite the
-        /// existing value with the new value in <paramref name="capabilityValue"/>.
-        /// </remarks>
-        [Obsolete("Use the temporary AddAdditionalOption method or the browser-specific method for adding additional options")]
-        public abstract void AddAdditionalCapability(string capabilityName, object capabilityValue);
 
         /// <summary>
         /// Returns the <see cref="ICapabilities"/> for the specific browser driver with these
@@ -316,15 +387,6 @@ namespace OpenQA.Selenium
         public void SetLoggingPreference(string logType, LogLevel logLevel)
         {
             this.loggingPreferences[logType] = logLevel;
-        }
-
-        /// <summary>
-        /// Returns a string representation of this <see cref="DriverOptions"/>.
-        /// </summary>
-        /// <returns>A string representation of this <see cref="DriverOptions"/>.</returns>
-        public override string ToString()
-        {
-            return JsonConvert.SerializeObject(this.ToDictionary(), Formatting.Indented);
         }
 
         /// <summary>
@@ -467,6 +529,11 @@ namespace OpenQA.Selenium
                 capabilities.SetCapability(CapabilityType.WebSocketUrl, this.useWebSocketUrl);
             }
 
+            if (this.enableDownloads.HasValue)
+            {
+                capabilities.SetCapability(CapabilityType.EnableDownloads, this.enableDownloads);
+            }
+
             if (this.useStrictFileInteractability)
             {
                 capabilities.SetCapability(CapabilityType.UseStrictFileInteractability, true);
@@ -526,6 +593,18 @@ namespace OpenQA.Selenium
                 {
                     capabilities.SetCapability(CapabilityType.Proxy, proxyCapability);
                 }
+            }
+
+            if (this.scriptTimeout.HasValue || this.pageLoadTimeout.HasValue || this.implicitWaitTimeout.HasValue)
+            {
+                var timeouts = new Timeout
+                {
+                    Script = this.scriptTimeout,
+                    PageLoad = this.pageLoadTimeout,
+                    ImplicitWait = this.implicitWaitTimeout
+                };
+
+                capabilities.SetCapability(CapabilityType.Timeouts, timeouts.ToCapabilities());
             }
 
             foreach (KeyValuePair<string, object> pair in this.additionalCapabilities)

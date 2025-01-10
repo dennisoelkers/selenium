@@ -38,7 +38,13 @@ const safari = require('./safari')
 const session = require('./lib/session')
 const until = require('./lib/until')
 const webdriver = require('./lib/webdriver')
-const opera = require('./opera')
+const select = require('./lib/select')
+const LogInspector = require('./bidi/logInspector')
+const BrowsingContext = require('./bidi/browsingContext')
+const BrowsingContextInspector = require('./bidi/browsingContextInspector')
+const ScriptManager = require('./bidi/scriptManager')
+const NetworkInspector = require('./bidi/networkInspector')
+const version = require('./package.json').version
 
 const Browser = capabilities.Browser
 const Capabilities = capabilities.Capabilities
@@ -78,7 +84,7 @@ function startSeleniumServer(jar) {
 function ensureFileDetectorsAreEnabled(ctor) {
   return class extends ctor {
     /** @param {input.FileDetector} detector */
-    setFileDetector (detector) {
+    setFileDetector(detector) {
       webdriver.WebDriver.prototype.setFileDetector.call(this, detector)
     }
   }
@@ -189,7 +195,7 @@ function createDriver(ctor, ...args) {
 class Builder {
   constructor() {
     /** @private @const */
-    this.log_ = logging.getLogger('webdriver.Builder')
+    this.log_ = logging.getLogger(`${logging.Type.DRIVER}.Builder`)
 
     /** @private {string} */
     this.url_ = ''
@@ -232,12 +238,6 @@ class Builder {
 
     /** @private {http.Agent} */
     this.agent_ = null
-
-    /** @private {opera.Options} */
-    this.operaOptions_ = null
-
-    /** @private {remote.DriverService.Builder} */
-    this.operaService_ = null
   }
 
   /**
@@ -433,20 +433,6 @@ class Builder {
   }
 
   /**
-   * Sets Opera specific {@linkplain opera.Options options} for drivers
-   * created by this builder. Any logging or proxy settings defined on the given
-   * options will take precedence over those set through
-   * {@link #setLoggingPrefs} and {@link #setProxy}, respectively.
-   *
-   * @param {!opera.Options} options The OperaDriver options to use.
-   * @return {!Builder} A self reference.
-   */
-  setOperaOptions(options) {
-    this.operaOptions_ = options
-    return this
-  }
-
-  /**
    * @return {chrome.Options} the Chrome specific options currently configured
    *     for this builder.
    */
@@ -561,21 +547,6 @@ class Builder {
   }
 
   /**
-   * Sets the {@link opera.ServiceBuilder} to use to manage the
-   * operaDriver child process when creating sessions locally.
-   *
-   * @param {opera.ServiceBuilder} service the service to use.
-   * @return {!Builder} a self reference.
-   */
-  setOperaService(service) {
-    if (service && !(service instanceof opera.ServiceBuilder)) {
-      throw TypeError('not a opera.ServiceBuilder object')
-    }
-    this.operaService_ = service
-    return this
-  }
-
-  /**
    * Sets Safari specific {@linkplain safari.Options options} for drivers
    * created by this builder. Any logging settings defined on the given options
    * will take precedence over those set through {@link #setLoggingPrefs}.
@@ -626,10 +597,20 @@ class Builder {
 
     browser = capabilities.get(Capability.BROWSER_NAME)
 
+    /**
+     * If browser is not defined in forBrowser, check if browserOptions are defined to pick the browserName
+     */
+    if (!browser) {
+      const options =
+        this.chromeOptions_ || this.firefoxOptions_ || this.ieOptions_ || this.safariOptions_ || this.edgeOptions_
+      if (options) {
+        browser = options['map_'].get(Capability.BROWSER_NAME)
+      }
+    }
+
     if (typeof browser !== 'string') {
       throw TypeError(
-        `Target browser must be a string, but is <${typeof browser}>;` +
-          ' did you forget to call forBrowser()?'
+        `Target browser must be a string, but is <${typeof browser}>;` + ' did you forget to call forBrowser()?',
       )
     }
 
@@ -648,28 +629,11 @@ class Builder {
       capabilities.merge(this.safariOptions_)
     } else if (browser === Browser.EDGE && this.edgeOptions_) {
       capabilities.merge(this.edgeOptions_)
-    } else if (browser === Browser.OPERA && this.operaOptions_) {
-      capabilities.merge(this.operaOptions_)
     }
 
-    checkOptions(
-      capabilities,
-      'chromeOptions',
-      chrome.Options,
-      'setChromeOptions'
-    )
-    checkOptions(
-      capabilities,
-      'moz:firefoxOptions',
-      firefox.Options,
-      'setFirefoxOptions'
-    )
-    checkOptions(
-      capabilities,
-      'safari.options',
-      safari.Options,
-      'setSafariOptions'
-    )
+    checkOptions(capabilities, 'chromeOptions', chrome.Options, 'setChromeOptions')
+    checkOptions(capabilities, 'moz:firefoxOptions', firefox.Options, 'setFirefoxOptions')
+    checkOptions(capabilities, 'safari.options', safari.Options, 'setSafariOptions')
 
     // Check for a remote browser.
     let url = this.url_
@@ -685,9 +649,7 @@ class Builder {
 
     if (url) {
       this.log_.fine('Creating session on remote server')
-      let client = Promise.resolve(url).then(
-        (url) => new _http.HttpClient(url, this.agent_, this.proxy_)
-      )
+      let client = Promise.resolve(url).then((url) => new _http.HttpClient(url, this.agent_, this.proxy_))
       let executor = new _http.Executor(client)
 
       if (browser === Browser.CHROME) {
@@ -736,23 +698,11 @@ class Builder {
         return createDriver(edge.Driver, capabilities, service)
       }
 
-      case Browser.OPERA: {
-        let service = null
-        if (this.operaService_) {
-          service = this.operaService_.build()
-        }
-        return createDriver(opera.Driver, capabilities, service)
-      }
-
       case Browser.SAFARI:
         return createDriver(safari.Driver, capabilities)
 
       default:
-        throw new Error(
-          'Do not know how to build driver: ' +
-            browser +
-            '; did you forget to call usingServer(url)?'
-        )
+        throw new Error('Do not know how to build driver: ' + browser + '; did you forget to call usingServer(url)?')
     }
   }
 }
@@ -760,7 +710,7 @@ class Builder {
 /**
  * In the 3.x releases, the various browser option classes
  * (e.g. firefox.Options) had to be manually set as an option using the
- * Capabilties class:
+ * Capabilities class:
  *
  *     let ffo = new firefox.Options();
  *     // Configure firefox options...
@@ -809,7 +759,7 @@ function checkOptions(caps, key, optionType, setMethod) {
       'Options class extends Capabilities and should not be set as key ' +
         `"${key}"; set browser-specific options with ` +
         `Builder.${setMethod}(). For more information, see the ` +
-        'documentation attached to the function that threw this error'
+        'documentation attached to the function that threw this error',
     )
   }
 }
@@ -839,3 +789,10 @@ exports.error = error
 exports.logging = logging
 exports.promise = promise
 exports.until = until
+exports.Select = select.Select
+exports.LogInspector = LogInspector
+exports.BrowsingContext = BrowsingContext
+exports.BrowsingContextInspector = BrowsingContextInspector
+exports.ScriptManager = ScriptManager
+exports.NetworkInspector = NetworkInspector
+exports.version = version

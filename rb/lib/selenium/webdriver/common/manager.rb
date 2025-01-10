@@ -56,7 +56,7 @@ module Selenium
         opts[:httpOnly] = http_only if http_only
 
         obj = opts.delete(:expires)
-        opts[:expiry] = seconds_from(obj).to_i if obj
+        opts[:expiry] = seconds_from(obj).to_int if obj
 
         @bridge.add_cookie opts
       end
@@ -65,7 +65,7 @@ module Selenium
       # Get the cookie with the given name
       #
       # @param [String] name the name of the cookie
-      # @return [Hash, nil] the cookie, or nil if it wasn't found.
+      # @return [Hash] the cookie, or throws a NoSuchCookieError if it wasn't found.
       #
 
       def cookie_named(name)
@@ -102,33 +102,6 @@ module Selenium
 
       def timeouts
         @timeouts ||= Timeouts.new(@bridge)
-      end
-
-      def logs
-        WebDriver.logger.deprecate('Manager#logs', 'Chrome::Driver#logs')
-        @logs ||= Logs.new(@bridge)
-      end
-
-      #
-      # @param type [Symbol] Supports two values: :tab and :window.
-      # @return [String] The value of the window handle
-      #
-      def new_window(type = :tab)
-        WebDriver.logger.deprecate('Manager#new_window', 'TargetLocator#new_window', id: :new_window) do
-          'e.g., `driver.switch_to.new_window(:tab)`'
-        end
-        case type
-        when :tab, :window
-          result = @bridge.new_window(type)
-          unless result.key?('handle')
-            raise UnknownError, "the driver did not return a handle. " \
-                                "The returned result: #{result.inspect}"
-          end
-          result['handle']
-        else
-          raise ArgumentError, "invalid argument for type. Got: '#{type.inspect}'. " \
-                               "Try :tab or :window"
-        end
       end
 
       def window

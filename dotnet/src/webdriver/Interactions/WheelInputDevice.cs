@@ -1,27 +1,25 @@
-// <copyright file="WheelInputDevice.cs" company="WebDriver Committers">
+// <copyright file="WheelInputDevice.cs" company="Selenium Committers">
 // Licensed to the Software Freedom Conservancy (SFC) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The SFC licenses this file
-// to you under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 // </copyright>
 
 using OpenQA.Selenium.Internal;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenQA.Selenium.Interactions
 {
@@ -75,7 +73,7 @@ namespace OpenQA.Selenium.Interactions
         /// <param name="deltaX">The distance along the X axis to scroll using the wheel.</param>
         /// <param name="deltaY">The distance along the Y axis to scroll using the wheel.</param>
         /// <param name="duration">The duration of the scroll action.</param>
-        /// <returns></returns>
+        /// <returns>The <see cref="Interaction"/> representing the wheel scroll.</returns>
         public Interaction CreateWheelScroll(int deltaX, int deltaY, TimeSpan duration)
         {
             return new WheelScrollInteraction(this, null, CoordinateOrigin.Viewport, 0, 0, deltaX, deltaY, duration);
@@ -90,7 +88,7 @@ namespace OpenQA.Selenium.Interactions
         /// <param name="deltaX">The distance along the X axis to scroll using the wheel.</param>
         /// <param name="deltaY">The distance along the Y axis to scroll using the wheel.</param>
         /// <param name="duration">The duration of the scroll action.</param>
-        /// <returns></returns>
+        /// <returns>The <see cref="Interaction"/> representing the wheel scroll.</returns>
         public Interaction CreateWheelScroll(IWebElement target, int xOffset, int yOffset, int deltaX, int deltaY, TimeSpan duration)
         {
             return new WheelScrollInteraction(this, target, CoordinateOrigin.Element, xOffset, yOffset, deltaX, deltaY, duration);
@@ -105,10 +103,58 @@ namespace OpenQA.Selenium.Interactions
         /// <param name="deltaX">The distance along the X axis to scroll using the wheel.</param>
         /// <param name="deltaY">The distance along the Y axis to scroll using the wheel.</param>
         /// <param name="duration">The duration of the scroll action.</param>
-        /// <returns></returns>
+        /// <returns>The <see cref="Interaction"/> representing the wheel scroll.</returns>
         public Interaction CreateWheelScroll(CoordinateOrigin origin, int xOffset, int yOffset, int deltaX, int deltaY, TimeSpan duration)
         {
             return new WheelScrollInteraction(this, null, origin, xOffset, yOffset, deltaX, deltaY, duration);
+        }
+
+        /// <summary>
+        /// Object representing the scroll origin of a scroll operation.
+        /// </summary>
+        public class ScrollOrigin
+        {
+            private IWebElement element;
+            private bool viewport;
+            private int xOffset = 0;
+            private int yOffset = 0;
+
+            /// <summary>
+            /// Gets or sets the element for the scroll origin.
+            /// </summary>
+            public IWebElement Element
+            {
+                get { return this.element; }
+                set { this.element = value; }
+            }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the viewport should be used as the origin.
+            /// </summary>
+            public bool Viewport
+            {
+                get { return this.viewport; }
+                set { this.viewport = value; }
+            }
+
+            /// <summary>
+            /// Gets or sets the horizontal offset of the scroll origin.
+            /// </summary>
+            public int XOffset
+            {
+                get { return this.xOffset; }
+                set { this.xOffset = value; }
+            }
+
+            /// <summary>
+            /// Gets or sets the vertical offset of the scroll origin.
+            /// </summary>
+            public int YOffset
+            {
+                get { return this.yOffset; }
+                set { this.yOffset = value; }
+            }
+
         }
 
         private class WheelScrollInteraction : Interaction
@@ -122,7 +168,7 @@ namespace OpenQA.Selenium.Interactions
             private CoordinateOrigin origin = CoordinateOrigin.Viewport;
 
             public WheelScrollInteraction(InputDevice sourceDevice, IWebElement target, CoordinateOrigin origin, int x, int y, int deltaX, int deltaY, TimeSpan duration)
-                :base(sourceDevice)
+                : base(sourceDevice)
             {
                 if (target != null)
                 {
@@ -152,7 +198,7 @@ namespace OpenQA.Selenium.Interactions
             {
                 Dictionary<string, object> toReturn = new Dictionary<string, object>();
 
-                toReturn["type"] = "pointerMove";
+                toReturn["type"] = "scroll";
                 if (this.duration != TimeSpan.MinValue)
                 {
                     toReturn["duration"] = Convert.ToInt64(this.duration.TotalMilliseconds);

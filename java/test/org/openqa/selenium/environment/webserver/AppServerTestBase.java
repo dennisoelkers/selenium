@@ -17,16 +17,21 @@
 
 package org.openqa.selenium.environment.webserver;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.openqa.selenium.remote.http.Contents.string;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.stream.StreamSupport;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.http.HttpClient;
@@ -36,24 +41,17 @@ import org.openqa.selenium.remote.http.HttpResponse;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.testing.drivers.WebDriverBuilder;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.time.Duration;
-import java.util.stream.StreamSupport;
-
 public abstract class AppServerTestBase {
   private static final String APPCACHE_MIME_TYPE = "text/cache-manifest";
   private AppServer server;
   private static WebDriver driver;
 
-  @BeforeClass
+  @BeforeAll
   public static void startDriver() {
     driver = new WebDriverBuilder().get();
   }
 
-  @Before
+  @BeforeEach
   public void startServer() {
     server = createAppServer();
     server.start();
@@ -61,24 +59,24 @@ public abstract class AppServerTestBase {
 
   protected abstract AppServer createAppServer();
 
-  @After
+  @AfterEach
   public void stopServer() {
     server.stop();
   }
 
-  @AfterClass
+  @AfterAll
   public static void quitDriver() {
     driver.quit();
   }
 
   @Test
-  public void hostsStaticPages() {
+  void hostsStaticPages() {
     driver.get(server.whereIs("simpleTest.html"));
     assertEquals("Hello WebDriver", driver.getTitle());
   }
 
   @Test
-  public void servesNumberedPages() {
+  void servesNumberedPages() {
     driver.get(server.whereIs("page/1"));
     assertEquals("Page1", driver.getTitle());
 
@@ -87,20 +85,20 @@ public abstract class AppServerTestBase {
   }
 
   @Test
-  public void numberedPagesExcludeQuerystring() {
+  void numberedPagesExcludeQuerystring() {
     driver.get(server.whereIs("page/1?foo=bar"));
     assertEquals("1", driver.findElement(By.id("pageNumber")).getText());
   }
 
   @Test
-  public void redirects() {
+  void redirects() {
     driver.get(server.whereIs("redirect"));
     assertEquals("We Arrive Here", driver.getTitle());
     assertTrue(driver.getCurrentUrl().contains("resultPage"));
   }
 
   @Test
-  public void sleeps() {
+  void sleeps() {
     long before = System.currentTimeMillis();
     driver.get(server.whereIs("sleep?time=1"));
 
@@ -111,14 +109,14 @@ public abstract class AppServerTestBase {
   }
 
   @Test
-  public void dealsWithUtf16() {
+  void dealsWithUtf16() {
     driver.get(server.whereIs("encoding"));
     String pageText = driver.findElement(By.tagName("body")).getText();
     assertTrue(pageText.contains("\u05E9\u05DC\u05D5\u05DD"));
   }
 
   @Test
-  public void manifestHasCorrectMimeType() throws IOException {
+  void manifestHasCorrectMimeType() throws IOException {
     String url = server.whereIs("html5/test.appcache");
     HttpClient.Factory factory = HttpClient.Factory.createDefault();
     HttpClient client = factory.createClient(new URL(url));
@@ -126,24 +124,24 @@ public abstract class AppServerTestBase {
 
     System.out.printf("Content for %s was %s%n", url, string(response));
 
-    assertTrue(StreamSupport.stream(response.getHeaders("Content-Type").spliterator(), false)
-        .anyMatch(header -> header.contains(APPCACHE_MIME_TYPE)));
+    assertTrue(
+        StreamSupport.stream(response.getHeaders("Content-Type").spliterator(), false)
+            .anyMatch(header -> header.contains(APPCACHE_MIME_TYPE)));
   }
 
   @Test
-  public void uploadsFile() throws Throwable {
+  void uploadsFile() throws Throwable {
     String FILE_CONTENTS = "Uploaded file";
     File testFile = File.createTempFile("webdriver", "tmp");
     testFile.deleteOnExit();
-    Files.write(testFile.toPath(), FILE_CONTENTS.getBytes(UTF_8));
+    Files.writeString(testFile.toPath(), FILE_CONTENTS);
 
     driver.get(server.whereIs("upload.html"));
     driver.findElement(By.id("upload")).sendKeys(testFile.getAbsolutePath());
     driver.findElement(By.id("go")).submit();
 
     driver.switchTo().frame("upload_target");
-    new WebDriverWait(driver, Duration.ofSeconds(10)).until(
-        d -> d.findElement(By.xpath("//body")).getText().equals(FILE_CONTENTS));
+    new WebDriverWait(driver, Duration.ofSeconds(10))
+        .until(d -> d.findElement(By.xpath("//body")).getText().equals(FILE_CONTENTS));
   }
-
 }

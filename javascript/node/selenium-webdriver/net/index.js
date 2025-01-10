@@ -17,7 +17,7 @@
 
 'use strict'
 
-const os = require('os')
+const os = require('node:os')
 
 function getLoInterface() {
   let name
@@ -48,7 +48,7 @@ function getIPAddress(loopback, family) {
     }
 
     for (let ipAddress of interfaces[key]) {
-      if (ipAddress.family === family && ipAddress.internal === loopback) {
+      if ((ipAddress.family === family || `IPv${ipAddress.family}` === family) && ipAddress.internal === loopback) {
         return ipAddress.address
       }
     }

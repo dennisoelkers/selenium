@@ -78,7 +78,7 @@ module Selenium
         def listening?
           addr     = Socket.getaddrinfo(@host, @port, Socket::AF_INET, Socket::SOCK_STREAM)
           sock     = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-          sockaddr = Socket.pack_sockaddr_in(@port, addr[0][3])
+          sockaddr = Socket.pack_sockaddr_in(@port, addr[0][3].to_s)
 
           begin
             sock.connect_nonblock sockaddr
@@ -93,13 +93,13 @@ module Selenium
           true
         rescue *NOT_CONNECTED_ERRORS
           sock&.close
-          WebDriver.logger.debug("polling for socket on #{[@host, @port].inspect}")
+          WebDriver.logger.debug("polling for socket on #{[@host, @port].inspect}", id: :driver_service)
           false
         end
       end
 
       def socket_writable?(sock)
-        IO.select(nil, [sock], nil, CONNECT_TIMEOUT)
+        sock.wait_writable(CONNECT_TIMEOUT)
       end
 
       def conn_completed?(sock)

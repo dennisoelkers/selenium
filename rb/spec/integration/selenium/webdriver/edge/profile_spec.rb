@@ -22,8 +22,8 @@ require_relative '../spec_helper'
 module Selenium
   module WebDriver
     module Edge
-      describe Profile, exclusive: {browser: :edge} do
-        let(:profile) { Profile.new }
+      describe Profile, exclusive: [{bidi: false, reason: 'Not yet implemented with BiDi'}, {browser: :edge}] do
+        let(:profile) { described_class.new }
 
         it 'adds an extension' do
           ext_path = '/some/path.crx'
@@ -38,7 +38,7 @@ module Selenium
 
           profile.add_extension(ext_path)
 
-          ext_file = instance_double('file')
+          ext_file = instance_double(File)
           allow(File).to receive(:open).with(ext_path, 'rb').and_yield ext_file
           allow(ext_file).to receive(:read).and_return 'test'
 

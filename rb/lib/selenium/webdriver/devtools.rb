@@ -20,59 +20,49 @@
 module Selenium
   module WebDriver
     class DevTools
-      RESPONSE_WAIT_TIMEOUT = 30
-      RESPONSE_WAIT_INTERVAL = 0.1
-
       autoload :ConsoleEvent, 'selenium/webdriver/devtools/console_event'
       autoload :ExceptionEvent, 'selenium/webdriver/devtools/exception_event'
       autoload :MutationEvent, 'selenium/webdriver/devtools/mutation_event'
+      autoload :NetworkInterceptor, 'selenium/webdriver/devtools/network_interceptor'
       autoload :PinnedScript, 'selenium/webdriver/devtools/pinned_script'
       autoload :Request, 'selenium/webdriver/devtools/request'
       autoload :Response, 'selenium/webdriver/devtools/response'
 
       def initialize(url:)
-        @callback_threads = ThreadGroup.new
-
-        @messages = []
+        @ws = WebSocketConnection.new(url: url)
         @session_id = nil
-        @url = url
-
-        process_handshake
-        @socket_thread = attach_socket_listener
         start_session
       end
 
       def close
-        @callback_threads.list.each(&:exit)
-        @socket_thread.exit
-        socket.close
+        @ws.close
       end
 
       def callbacks
-        @callbacks ||= Hash.new { |callbacks, event| callbacks[event] = [] }
+        @ws.callbacks
       end
 
       def send_cmd(method, **params)
-        id = next_id
-        data = {id: id, method: method, params: params.reject { |_, v| v.nil? }}
+        data = {method: method, params: params.compact}
         data[:sessionId] = @session_id if @session_id
-        data = JSON.generate(data)
-        WebDriver.logger.debug "DevTools -> #{data}"
-
-        out_frame = WebSocket::Frame::Outgoing::Client.new(version: ws.version, data: data, type: 'text')
-        socket.write(out_frame.to_s)
-
-        message = wait.until do
-          @messages.find { |m| m['id'] == id }
-        end
-
+        message = @ws.send_cmd(**data)
         raise Error::WebDriverError, error_message(message['error']) if message['error']
 
         message
       end
 
       def method_missing(method, *_args)
-        desired_class = "Selenium::DevTools::V#{Selenium::DevTools.version}::#{method.capitalize}"
+        namespace = "Selenium::DevTools::V#{Selenium::DevTools.version}"
+        methods_to_classes = "#{namespace}::METHODS_TO_CLASSES"
+
+        desired_class = if Object.const_defined?(methods_to_classes)
+                          # selenium-devtools 0.113 and newer
+                          "#{namespace}::#{Object.const_get(methods_to_classes)[method]}"
+                        else
+                          # selenium-devtools 0.112 and older
+                          "#{namespace}::#{method.capitalize}"
+                        end
+
         return unless Object.const_defined?(desired_class)
 
         self.class.class_eval do
@@ -91,32 +81,6 @@ module Selenium
 
       private
 
-      def process_handshake
-        socket.print(ws.to_s)
-        ws << socket.readpartial(1024)
-      end
-
-      def attach_socket_listener
-        Thread.new do
-          Thread.current.abort_on_exception = true
-          Thread.current.report_on_exception = false
-
-          until socket.eof?
-            incoming_frame << socket.readpartial(1024)
-
-            while (frame = incoming_frame.next)
-              message = process_frame(frame)
-              next unless message['method']
-
-              params = message['params']
-              callbacks[message['method']].each do |callback|
-                @callback_threads.add(callback_thread(params, &callback))
-              end
-            end
-          end
-        end
-      end
-
       def start_session
         targets = target.get_targets.dig('result', 'targetInfos')
         page_target = targets.find { |target| target['type'] == 'page' }
@@ -124,70 +88,9 @@ module Selenium
         @session_id = session.dig('result', 'sessionId')
       end
 
-      def incoming_frame
-        @incoming_frame ||= WebSocket::Frame::Incoming::Client.new(version: ws.version)
-      end
-
-      def process_frame(frame)
-        message = frame.to_s
-
-        # Firefox will periodically fail on unparsable empty frame
-        return {} if message.empty?
-
-        message = JSON.parse(message)
-        @messages << message
-        WebDriver.logger.debug "DevTools <- #{message}"
-
-        message
-      end
-
-      def callback_thread(params)
-        Thread.new do
-          Thread.current.abort_on_exception = true
-
-          # We might end up blocked forever when we have an error in event.
-          # For example, if network interception event raises error,
-          # the browser will keep waiting for the request to be proceeded
-          # before returning back to the original thread. In this case,
-          # we should at least print the error.
-          Thread.current.report_on_exception = true
-
-          yield params
-        end
-      end
-
-      def wait
-        @wait ||= Wait.new(timeout: RESPONSE_WAIT_TIMEOUT, interval: RESPONSE_WAIT_INTERVAL)
-      end
-
-      def socket
-        @socket ||= begin
-          if URI(@url).scheme == 'wss'
-            socket = TCPSocket.new(ws.host, ws.port)
-            socket = OpenSSL::SSL::SSLSocket.new(socket, OpenSSL::SSL::SSLContext.new)
-            socket.sync_close = true
-            socket.connect
-
-            socket
-          else
-            TCPSocket.new(ws.host, ws.port)
-          end
-        end
-      end
-
-      def ws
-        @ws ||= WebSocket::Handshake::Client.new(url: @url)
-      end
-
-      def next_id
-        @id ||= 0
-        @id += 1
-      end
-
       def error_message(error)
         [error['code'], error['message'], error['data']].join(': ')
       end
-
     end # DevTools
   end # WebDriver
 end # Selenium

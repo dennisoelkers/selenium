@@ -1,6 +1,16 @@
+load("@aspect_rules_js//npm:defs.bzl", "npm_link_package")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//common:browsers.bzl", "chrome_data", "firefox_data")
 load("//java:browsers.bzl", "chrome_jvm_flags", "firefox_jvm_flags")
 load("//java:defs.bzl", "artifact")
+
+exports_files([
+    "package.json",
+    "pnpm-workspace.yaml",
+])
+
+npm_link_all_packages(name = "node_modules")
 
 filegroup(
     name = "license",
@@ -9,6 +19,14 @@ filegroup(
         "NOTICE",
     ],
     visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "rakefile",
+    srcs = [
+        "Rakefile",
+    ],
+    visibility = ["//rb:__subpackages__"],
 )
 
 alias(
@@ -52,10 +70,24 @@ java_binary(
     ],
 )
 
+npm_link_package(
+    name = "node_modules/selenium-webdriver",
+    src = "//javascript/node/selenium-webdriver",
+)
+
 platform(
     name = "rosetta",
     constraint_values = [
         "@platforms//os:osx",
         "@platforms//cpu:x86_64",
+    ],
+)
+
+buildifier(
+    name = "buildifier",
+    lint_mode = "fix",
+    mode = "fix",
+    tags = [
+        "manual",
     ],
 )

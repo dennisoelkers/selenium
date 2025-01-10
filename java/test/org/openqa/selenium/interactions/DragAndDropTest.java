@@ -18,39 +18,37 @@
 package org.openqa.selenium.interactions;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.openqa.selenium.WaitingConditions.elementLocationToBe;
 import static org.openqa.selenium.testing.drivers.Browser.CHROME;
-import static org.openqa.selenium.testing.drivers.Browser.LEGACY_FIREFOX_XPI;
-import static org.openqa.selenium.testing.drivers.Browser.HTMLUNIT;
-import static org.openqa.selenium.testing.drivers.Browser.IE;
 import static org.openqa.selenium.testing.drivers.Browser.FIREFOX;
+import static org.openqa.selenium.testing.drivers.Browser.IE;
 import static org.openqa.selenium.testing.drivers.Browser.SAFARI;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Platform;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.testing.Ignore;
-import org.openqa.selenium.testing.JUnit4TestBase;
+import org.openqa.selenium.testing.JupiterTestBase;
 import org.openqa.selenium.testing.NoDriverAfterTest;
 import org.openqa.selenium.testing.NotYetImplemented;
 import org.openqa.selenium.testing.SwitchToTopAfterTest;
-import org.openqa.selenium.testing.TestUtilities;
-import org.openqa.selenium.testing.drivers.Browser;
 
-@Ignore(value = HTMLUNIT, reason = "Advanced mouse actions only implemented in rendered browsers")
-public class DragAndDropTest extends JUnit4TestBase {
+class DragAndDropTest extends JupiterTestBase {
+
+  private static void sleep(int ms) {
+    try {
+      Thread.sleep(ms);
+    } catch (InterruptedException e) {
+      throw new RuntimeException("Interrupted: " + e);
+    }
+  }
 
   @Test
-  public void testDragAndDropRelative() {
-    assumeFalse(Browser.detect() == Browser.LEGACY_OPERA &&
-                TestUtilities.getEffectivePlatform(driver).is(Platform.WINDOWS));
-
+  void testDragAndDropRelative() {
     driver.get(pages.dragAndDropPage);
     WebElement img = driver.findElement(By.id("test1"));
     Point expectedLocation = img.getLocation();
@@ -65,7 +63,7 @@ public class DragAndDropTest extends JUnit4TestBase {
   }
 
   @Test
-  public void testDragAndDropToElement() {
+  void testDragAndDropToElement() {
     driver.get(pages.dragAndDropPage);
     WebElement img1 = driver.findElement(By.id("test1"));
     WebElement img2 = driver.findElement(By.id("test2"));
@@ -75,11 +73,11 @@ public class DragAndDropTest extends JUnit4TestBase {
 
   @SwitchToTopAfterTest
   @Test
-  public void testDragAndDropToElementInIframe() {
+  void testDragAndDropToElementInIframe() {
     driver.get(pages.iframePage);
     final WebElement iframe = driver.findElement(By.tagName("iframe"));
-    ((JavascriptExecutor) driver).executeScript("arguments[0].src = arguments[1]", iframe,
-                                                pages.dragAndDropPage);
+    ((JavascriptExecutor) driver)
+        .executeScript("arguments[0].src = arguments[1]", iframe, pages.dragAndDropPage);
     driver.switchTo().frame(0);
     WebElement img1 = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("test1")));
     WebElement img2 = driver.findElement(By.id("test2"));
@@ -89,7 +87,7 @@ public class DragAndDropTest extends JUnit4TestBase {
 
   @SwitchToTopAfterTest
   @Test
-  public void testDragAndDropElementWithOffsetInIframeAtBottom() {
+  void testDragAndDropElementWithOffsetInIframeAtBottom() {
     driver.get(appServer.whereIs("iframeAtBottom.html"));
 
     final WebElement iframe = driver.findElement(By.tagName("iframe"));
@@ -120,7 +118,7 @@ public class DragAndDropTest extends JUnit4TestBase {
   }
 
   @Test
-  public void testElementInDiv() {
+  void testElementInDiv() {
     driver.get(pages.dragAndDropPage);
     WebElement img = driver.findElement(By.id("test3"));
     Point expectedLocation = img.getLocation();
@@ -129,8 +127,7 @@ public class DragAndDropTest extends JUnit4TestBase {
   }
 
   @Test
-  @Ignore(LEGACY_FIREFOX_XPI)
-  public void testDragTooFar() {
+  void testDragTooFar() {
     driver.get(pages.dragAndDropPage);
     Actions actions = new Actions(driver);
 
@@ -162,19 +159,17 @@ public class DragAndDropTest extends JUnit4TestBase {
     driver.get(pages.dragAndDropPage);
     WebElement img = driver.findElement(By.id("test3"));
     Point expectedLocation = img.getLocation();
-    expectedLocation= drag(img, expectedLocation, 100, 100);
+    expectedLocation = drag(img, expectedLocation, 100, 100);
     assertThat(img.getLocation()).isEqualTo(expectedLocation);
   }
 
   private Point drag(WebElement elem, Point expectedLocation, int moveRightBy, int moveDownBy) {
-    new Actions(driver)
-      .dragAndDropBy(elem, moveRightBy, moveDownBy)
-      .perform();
+    new Actions(driver).dragAndDropBy(elem, moveRightBy, moveDownBy).perform();
     return expectedLocation.moveBy(moveRightBy, moveDownBy);
   }
 
   @Test
-  public void testDragAndDropOnJQueryItems() {
+  void testDragAndDropOnJQueryItems() {
     driver.get(pages.droppableItems);
 
     WebElement toDrag = driver.findElement(By.id("draggable"));
@@ -222,13 +217,4 @@ public class DragAndDropTest extends JUnit4TestBase {
 
     assertThat(toDrag.getLocation()).isEqualTo(dragTo.getLocation());
   }
-
-  private static void sleep(int ms) {
-    try {
-      Thread.sleep(ms);
-    } catch (InterruptedException e) {
-      throw new RuntimeException("Interrupted: " + e.toString());
-    }
-  }
-
 }

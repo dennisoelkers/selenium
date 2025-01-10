@@ -18,13 +18,11 @@
 package org.openqa.selenium;
 
 public enum PageLoadStrategy {
+  NONE("none"),
+  EAGER("eager"),
+  NORMAL("normal");
 
-  NONE ("none"),
-  EAGER ("eager"),
-  NORMAL ("normal")
-  ;
-
-  private String text;
+  private final String text;
 
   PageLoadStrategy(String text) {
     this.text = text;

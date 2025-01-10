@@ -1,9 +1,27 @@
-using System;
+// <copyright file="DragAndDropTest.cs" company="Selenium Committers">
+// Licensed to the Software Freedom Conservancy (SFC) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+// </copyright>
+
 using NUnit.Framework;
+using OpenQA.Selenium.Environment;
+using System;
 using System.Drawing;
 using System.Text.RegularExpressions;
-using OpenQA.Selenium.Environment;
-using OpenQA.Selenium.Internal;
 
 namespace OpenQA.Selenium.Interactions
 {
@@ -26,13 +44,13 @@ namespace OpenQA.Selenium.Interactions
             driver.Url = dragAndDropPage;
             IWebElement img = driver.FindElement(By.Id("test1"));
             Point expectedLocation = Drag(img, img.Location, 150, 200);
-            Assert.AreEqual(expectedLocation, img.Location);
+            Assert.That(img.Location, Is.EqualTo(expectedLocation));
             expectedLocation = Drag(img, img.Location, -50, -25);
-            Assert.AreEqual(expectedLocation, img.Location);
+            Assert.That(img.Location, Is.EqualTo(expectedLocation));
             expectedLocation = Drag(img, img.Location, 0, 0);
-            Assert.AreEqual(expectedLocation, img.Location);
+            Assert.That(img.Location, Is.EqualTo(expectedLocation));
             expectedLocation = Drag(img, img.Location, 1, -1);
-            Assert.AreEqual(expectedLocation, img.Location);
+            Assert.That(img.Location, Is.EqualTo(expectedLocation));
         }
 
         [Test]
@@ -43,7 +61,7 @@ namespace OpenQA.Selenium.Interactions
             IWebElement img2 = driver.FindElement(By.Id("test2"));
             Actions actionProvider = new Actions(driver);
             actionProvider.DragAndDrop(img2, img1).Perform();
-            Assert.AreEqual(img1.Location, img2.Location);
+            Assert.That(img2.Location, Is.EqualTo(img1.Location));
         }
 
         [Test]
@@ -69,7 +87,7 @@ namespace OpenQA.Selenium.Interactions
 
             IWebElement img2 = driver.FindElement(By.Id("test2"));
             new Actions(driver).DragAndDrop(img2, img1).Perform();
-            Assert.AreEqual(img1.Location, img2.Location);
+            Assert.That(img2.Location, Is.EqualTo(img1.Location));
         }
 
         [Test]
@@ -85,7 +103,7 @@ namespace OpenQA.Selenium.Interactions
 
             new Actions(driver).DragAndDropToOffset(img1, 20, 20).Perform();
             initial.Offset(20, 20);
-            Assert.AreEqual(initial, img1.Location);
+            Assert.That(img1.Location, Is.EqualTo(initial));
         }
 
         [Test]
@@ -108,7 +126,7 @@ namespace OpenQA.Selenium.Interactions
 
             new Actions(driver).DragAndDropToOffset(el, 3700, 3700).Perform();
             initial.Offset(3700, 3700);
-            Assert.AreEqual(initial, el.Location);
+            Assert.That(el.Location, Is.EqualTo(initial));
         }
 
         [Test]
@@ -119,7 +137,7 @@ namespace OpenQA.Selenium.Interactions
             Point startLocation = img.Location;
             Point expectedLocation = Drag(img, startLocation, 100, 100);
             Point endLocation = img.Location;
-            Assert.AreEqual(expectedLocation, endLocation);
+            Assert.That(endLocation, Is.EqualTo(expectedLocation));
         }
 
         [Test]
@@ -128,7 +146,7 @@ namespace OpenQA.Selenium.Interactions
             driver.Url = dragAndDropPage;
             IWebElement img = driver.FindElement(By.Id("test1"));
 
-            // Dragging too far left and up does not move the element. It will be at 
+            // Dragging too far left and up does not move the element. It will be at
             // its original location after the drag.
             Point originalLocation = new Point(0, 0);
             Actions actionProvider = new Actions(driver);
@@ -154,7 +172,7 @@ namespace OpenQA.Selenium.Interactions
                 driver.Url = dragAndDropPage;
                 IWebElement img = driver.FindElement(By.Id("test3"));
                 Point expectedLocation = Drag(img, img.Location, 100, 100);
-                Assert.AreEqual(expectedLocation, img.Location);
+                Assert.That(img.Location, Is.EqualTo(expectedLocation));
             }
             finally
             {
@@ -186,20 +204,19 @@ namespace OpenQA.Selenium.Interactions
                 text = dropInto.FindElement(By.TagName("p")).Text;
             }
 
-            Assert.AreEqual("Dropped!", text);
+            Assert.That(text, Is.EqualTo("Dropped!"));
 
             IWebElement reporter = driver.FindElement(By.Id("drop_reports"));
             // Assert that only one mouse click took place and the mouse was moved
             // during it.
             string reporterText = reporter.Text;
             Assert.That(reporterText, Does.Match("start( move)* down( move)+ up"));
-            Assert.AreEqual(1, Regex.Matches(reporterText, "down").Count, "Reporter text:" + reporterText);
-            Assert.AreEqual(1, Regex.Matches(reporterText, "up").Count, "Reporter text:" + reporterText);
+            Assert.That(Regex.Matches(reporterText, "down"), Has.Count.EqualTo(1), "Reporter text:" + reporterText);
+            Assert.That(Regex.Matches(reporterText, "up"), Has.Count.EqualTo(1), "Reporter text:" + reporterText);
             Assert.That(reporterText, Does.Contain("move"));
         }
 
         [Test]
-        [IgnoreBrowser(Browser.Opera, "Untested")]
         [IgnoreBrowser(Browser.Firefox, "Moving outside of view port throws exception in spec-compliant driver")]
         [IgnoreBrowser(Browser.IE, "Moving outside of view port throws exception in spec-compliant driver")]
         public void CanDragAnElementNotVisibleInTheCurrentViewportDueToAParentOverflow()
@@ -213,11 +230,11 @@ namespace OpenQA.Selenium.Interactions
             Point targetLocation = dragTo.Location;
 
             int yOffset = targetLocation.Y - srcLocation.Y;
-            Assert.AreNotEqual(0, yOffset);
+            Assert.That(yOffset, Is.Not.Zero);
 
             new Actions(driver).DragAndDropToOffset(toDrag, 0, yOffset).Perform();
 
-            Assert.AreEqual(dragTo.Location, toDrag.Location);
+            Assert.That(toDrag.Location, Is.EqualTo(dragTo.Location));
         }
 
         //------------------------------------------------------------------
@@ -233,7 +250,7 @@ namespace OpenQA.Selenium.Interactions
             actionProvider.DragAndDropToOffset(img1, 100, 100).Perform();
             actionProvider.Reset();
             actionProvider.DragAndDrop(img2, img1).Perform();
-            Assert.AreEqual(img1.Location, img2.Location);
+            Assert.That(img2.Location, Is.EqualTo(img1.Location));
         }
 
         private Point Drag(IWebElement elem, Point initialLocation, int moveRightBy, int moveDownBy)
