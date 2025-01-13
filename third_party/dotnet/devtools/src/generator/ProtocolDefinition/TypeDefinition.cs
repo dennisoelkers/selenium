@@ -1,6 +1,6 @@
 namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
     using OpenQA.Selenium.DevToolsGenerator.Converters;
     using System;
     using System.Collections.Generic;
@@ -14,77 +14,45 @@ namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
             Properties = new Collection<TypeDefinition>();
         }
 
-        [JsonProperty(PropertyName = "id")]
-        public string Id
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("id")]
+        public string Id { get; set; }
 
-        [JsonProperty(PropertyName = "type")]
-        public string Type
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
 
-        [JsonProperty(PropertyName = "enum")]
-        public ICollection<string> Enum
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("enum")]
+        public ICollection<string> Enum { get; set; }
 
-        [JsonProperty(PropertyName = "properties")]
-        public ICollection<TypeDefinition> Properties
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("properties")]
+        public ICollection<TypeDefinition> Properties { get; set; }
 
-        [JsonProperty(PropertyName = "items")]
-        public TypeDefinition Items
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("items")]
+        public TypeDefinition Items { get; set; }
 
-        [JsonProperty(PropertyName = "minItems")]
-        public int MinItems
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("minItems")]
+        public int MinItems { get; set; }
 
-        [JsonProperty(PropertyName = "maxItems")]
-        public int MaxItems
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("maxItems")]
+        public int MaxItems { get; set; }
 
-        [JsonProperty(PropertyName = "$ref")]
-        public string TypeReference
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("$ref")]
+        public string TypeReference { get; set; }
 
-        [JsonProperty(PropertyName = "optional")]
+        [JsonPropertyName("optional")]
         [JsonConverter(typeof(BooleanJsonConverter))]
-        public bool Optional
-        {
-            get;
-            set;
-        }
+        public bool Optional { get; set; }
 
         public override string ToString()
         {
-            if (!String.IsNullOrWhiteSpace(Id))
+            if (!string.IsNullOrWhiteSpace(Id))
+            {
                 return Id;
+            }
 
-            if (!String.IsNullOrWhiteSpace(Name))
+            if (!string.IsNullOrWhiteSpace(Name))
+            {
                 return Name;
+            }
 
             return $"Ref: {TypeReference}";
         }

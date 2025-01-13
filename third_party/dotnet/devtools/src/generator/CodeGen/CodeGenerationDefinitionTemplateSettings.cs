@@ -1,6 +1,6 @@
 namespace OpenQA.Selenium.DevToolsGenerator.CodeGen
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     /// <summary>
     /// Represents settings around Definition templates.
@@ -16,7 +16,8 @@ namespace OpenQA.Selenium.DevToolsGenerator.CodeGen
                 OutputPath = "{{domainName}}\\{{className}}Adapter.cs",
             };
 
-            CommandTemplate = new CodeGenerationTemplateSettings {
+            CommandTemplate = new CodeGenerationTemplateSettings
+            {
                 TemplatePath = "command.hbs",
                 OutputPath = "{{domainName}}\\{{className}}Command.cs",
             };
@@ -46,47 +47,22 @@ namespace OpenQA.Selenium.DevToolsGenerator.CodeGen
             };
         }
 
-        [JsonProperty("domainTemplate")]
-        public CodeGenerationTemplateSettings DomainTemplate
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("domainTemplate")]
+        public CodeGenerationTemplateSettings DomainTemplate { get; set; }
 
-        [JsonProperty("commandTemplate")]
-        public CodeGenerationTemplateSettings CommandTemplate
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("commandTemplate")]
+        public CodeGenerationTemplateSettings CommandTemplate { get; set; }
 
-        [JsonProperty("eventTemplate")]
-        public CodeGenerationTemplateSettings EventTemplate
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("eventTemplate")]
+        public CodeGenerationTemplateSettings EventTemplate { get; set; }
 
-        [JsonProperty("typeObjectTemplate")]
-        public CodeGenerationTemplateSettings TypeObjectTemplate
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("typeObjectTemplate")]
+        public CodeGenerationTemplateSettings TypeObjectTemplate { get; set; }
 
-        [JsonProperty("typeHashTemplate")]
-        public CodeGenerationTemplateSettings TypeHashTemplate
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("typeHashTemplate")]
+        public CodeGenerationTemplateSettings TypeHashTemplate { get; set; }
 
-        [JsonProperty("typeEnumTemplate")]
-        public CodeGenerationTemplateSettings TypeEnumTemplate
-        {
-            get;
-            set;
-        }
-
+        [JsonPropertyName("typeEnumTemplate")]
+        public CodeGenerationTemplateSettings TypeEnumTemplate { get; set; }
     }
 }

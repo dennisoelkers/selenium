@@ -1,6 +1,6 @@
-﻿namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
+namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
     using System;
 
     /// <summary>
@@ -8,24 +8,18 @@
     /// </summary>
     public sealed class Version : IComparable<Version>
     {
-        [JsonProperty(PropertyName = "major")]
-        public string Major
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("major")]
+        public string Major { get; set; }
 
-        [JsonProperty(PropertyName = "minor")]
-        public string Minor
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("minor")]
+        public string Minor { get; set; }
 
         public int CompareTo(Version other)
         {
             if (other == null)
+            {
                 return -1;
+            }
 
             return ToString().CompareTo(other.ToString());
         }

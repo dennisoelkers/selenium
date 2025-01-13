@@ -1,6 +1,6 @@
-﻿namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
+namespace OpenQA.Selenium.DevToolsGenerator.ProtocolDefinition
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
 
@@ -11,11 +11,7 @@
             Parameters = new Collection<TypeDefinition>();
         }
 
-        [JsonProperty(PropertyName = "parameters")]
-        public ICollection<TypeDefinition> Parameters
-        {
-            get;
-            set;
-        }
+        [JsonPropertyName("parameters")]
+        public ICollection<TypeDefinition> Parameters { get; set; }
     }
 }
